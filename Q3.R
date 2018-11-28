@@ -3,20 +3,22 @@ rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
 
 #define likelihood function to minimise
 ratlikelihood <- function (theta) {
-  #create subset of data since for the purposes of calculating the optimal theta since when status = 0,
-  #the survival function does not depend on theta. Need to optimise this function using optim.
-  t1 <- rats[which(rats$status==1),,]$time
-  rx1 <- rats[which(rats$status==1),,]$rx
+  #create subsets of data since for the likelihood function since the contribution to the likelihood varies
+  #depending on the 'status' variable
   t0 <- rats[which(rats$status==0),,]$time
   rx0 <- rats[which(rats$status==0),,]$rx
+  t1 <- rats[which(rats$status==1),,]$time
+  rx1 <- rats[which(rats$status==1),,]$rx
   
   #compute the negative log likelihood
   a <- 1/exp(theta[3]) #shape
-  b <- exp(theta[1] + theta[2]*rx0) #scale
+  b <- exp(theta[1] + theta[2]*rx1) #scale
   
-  loglik1 <- -sum(log(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1))))
+  loglik1 <- -sum(log((a/b)*(t1/b)^(a-1)/(1+(t1/b)^a)^2))
+
+  b <- exp(theta[1] + theta[2]*rx0) #redefine b for new rx vector
   
-  loglik2 <- sum((t0/b)^a)
+  loglik2 <- sum(log(1+(t0/b)^a))
   
   loglik <- loglik1 + loglik2
   
@@ -35,7 +37,7 @@ beta1var <- 0
 logsigvar <- 0
 
 for (i in 0:1000) {
-  theta[1] <- 4.5 + i*0.0025
+  theta[1] <- 2.5 + i*0.005
   beta0[i+1] <- theta[1]
   beta0var[i+1] <- ratlikelihood(theta)
 }
@@ -44,7 +46,7 @@ plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~5.75
 
 theta <- c(0,0,0)
 for (i in 0:1000) {
-  theta[2] <- 4 + i*0.0025
+  theta[2] <- 2.5 + i*0.005
   beta1[i+1] <- theta[2]
   beta1var[i+1] <- ratlikelihood(theta)
 }
@@ -53,34 +55,34 @@ plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~5.25
 
 theta <- c(0,0,0)
 for (i in 0:1000) {
-  theta[3] <- 1.5 + i*0.005
+  theta[3] <- i*0.005
   logsig[i+1] <- theta[3]
   logsigvar[i+1] <- ratlikelihood(theta)
 }
 
-plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~2.75
+plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~2.25
 
-theta <- c(5.75,5.25,2.75)
+theta <- c(5.75,5.5,2.25)
 ratlik <- optim(theta, ratlikelihood, hessian=TRUE, method="Nelder-Mead")
-weibullapprox <- ratlik$par
+llogisticapprox <- ratlik$par
 
 #then to find the standard error, take the sqrt of the diag of the inverse hessian
 hess <- solve(ratlik$hessian)
 stderr <- sqrt(diag(hess))
 
 #95% CI = parameter estimate +- ~1.96*stderr
-CI <- c(ratlik$par[2]+qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
+CI <- c(ratlik$par[2]+ qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
 
 a <- 1/exp(ratlik$par[3]) #shape
 b <- exp(ratlik$par[1] + ratlik$par[2]) #scale (received treatment)
 
 x1 <- seq(from=0,to=200,by=0.5)
-y1 <- dweibull(x1, shape = a, scale = b)
+y1 <- (a/b)*(x1/b)^(a-1)/(1+(x1/b)^a)^2
 plot(x1,y1,type="l")
 
 b <- exp(ratlik$par[1]) #redefine scale (no treatment)
 x0 <- seq(from=0,to=200,by=0.5)
-y0 <- dweibull(x0, shape = a, scale = b)
+y0 <- (a/b)*(x0/b)^(a-1)/(1+(x0/b)^a)^2
 plot(x0,y0,type="l")
 
 #plots appear to show that rats which received medicine died sooner.................
