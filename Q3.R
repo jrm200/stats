@@ -11,14 +11,14 @@ ratlikelihood <- function (theta) {
   rx1 <- rats[which(rats$status==1),,]$rx
   
   #compute the negative log likelihood
-  a <- 1/exp(theta[3]) #shape
-  b <- exp(theta[1] + theta[2]*rx1) #scale
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1] + theta[2]*rx1) #scale
   
-  loglik1 <- -sum(log((a/b)*(t1/b)^(a-1)/(1+(t1/b)^a)^2))
+  loglik1 <- -sum(log((k/lambda)*(t1/lambda)^(k-1)/(1+(t1/lambda)^k)^2))
 
-  b <- exp(theta[1] + theta[2]*rx0) #redefine b for new rx vector
+  lambda <- exp(theta[1] + theta[2]*rx0) #redefine b for new rx vector
   
-  loglik2 <- sum(log(1+(t0/b)^a))
+  loglik2 <- sum(log(1+(t0/lambda)^k))
   
   loglik <- loglik1 + loglik2
   

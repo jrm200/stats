@@ -11,12 +11,12 @@ ratlikelihood <- function (theta) {
   rx0 <- rats[which(rats$status==0),,]$rx
   
   #compute the negative log likelihood
-  a <- 1/exp(theta[3]) #shape
-  b <- exp(theta[1] + theta[2]*rx0) #scale
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1] + theta[2]*rx0) #scale
   
   loglik1 <- -sum(log(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1))))
   
-  loglik2 <- sum((t0/b)^a)
+  loglik2 <- sum((t0/lambda)^k)
   
   loglik <- loglik1 + loglik2
   
