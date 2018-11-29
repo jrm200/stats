@@ -1,3 +1,5 @@
+rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
+
 sigma <- 1
 
 b <- rnorm(50, sd = sigma)
