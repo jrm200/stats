@@ -46,7 +46,7 @@ This study is comprised of two main approaches of statistical analyses: frequent
 * and then second section (Maybe into two subsections)
 + a description, explanation or development of the methodology used (this should be the most technical part of the report. It should describe detailed precise mathematical tools & techniques used)
 + the actual analysis.
-* Include the graphs to show how we obtained the starting points maybe as 3 in a row.
+* Include the graphs to show how we obtained the starting points maybe as 3 in a row. i.e. par(mfrow=c(1,2))
 * The code for the functions
 
 ### Results, conclusions and recommendations
