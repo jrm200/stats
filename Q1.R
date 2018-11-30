@@ -2,7 +2,7 @@
 rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
 
 #define likelihood function to minimise
-ratlikelihood <- function (theta) {
+nll.weibull <- function (theta) {
   #create subset of data since for the purposes of calculating the optimal theta since when status = 0,
   #the survival function does not depend on theta. Need to optimise this function using optim.
   t1 <- rats[which(rats$status==1),,]$time
@@ -14,7 +14,7 @@ ratlikelihood <- function (theta) {
   k <- 1/exp(theta[3]) #shape
   lambda <- exp(theta[1] + theta[2]*rx0) #scale
   
-  loglik1 <- -sum(log(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1))))
+  loglik1 <- -sum(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1), log=TRUE))
   
   loglik2 <- sum((t0/lambda)^k)
   
@@ -37,7 +37,7 @@ logsigvar <- 0
 for (i in 0:1000) {
   theta[1] <- 4.5 + i*0.0025
   beta0[i+1] <- theta[1]
-  beta0var[i+1] <- ratlikelihood(theta)
+  beta0var[i+1] <- nll.weibull(theta)
 }
 
 plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~5.75
@@ -46,7 +46,7 @@ theta <- c(0,0,0)
 for (i in 0:1000) {
   theta[2] <- 4 + i*0.0025
   beta1[i+1] <- theta[2]
-  beta1var[i+1] <- ratlikelihood(theta)
+  beta1var[i+1] <- nll.weibull(theta)
 }
 
 plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~5.25
@@ -55,13 +55,13 @@ theta <- c(0,0,0)
 for (i in 0:1000) {
   theta[3] <- 1.5 + i*0.005
   logsig[i+1] <- theta[3]
-  logsigvar[i+1] <- ratlikelihood(theta)
+  logsigvar[i+1] <- nll.weibull(theta)
 }
 
 plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~2.75
 
 theta <- c(5.75,5.25,2.75)
-ratlik <- optim(theta, ratlikelihood, hessian=TRUE, method="Nelder-Mead")
+ratlik <- optim(theta, nll.weibull, hessian=TRUE, method="Nelder-Mead")
 weibullapprox <- ratlik$par
 
 #then to find the standard error, take the sqrt of the diag of the inverse hessian
@@ -71,16 +71,16 @@ stderr <- sqrt(diag(hess))
 #95% CI = parameter estimate +- ~1.96*stderr
 CI <- c(ratlik$par[2]+qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
 
-a <- 1/exp(ratlik$par[3]) #shape
-b <- exp(ratlik$par[1] + ratlik$par[2]) #scale (received treatment)
+#a <- 1/exp(ratlik$par[3]) #shape
+#b <- exp(ratlik$par[1] + ratlik$par[2]) #scale (received treatment)
 
-x1 <- seq(from=0,to=200,by=0.5)
-y1 <- dweibull(x1, shape = a, scale = b)
-plot(x1,y1,type="l")
+#x1 <- seq(from=0,to=200,by=0.5)
+#y1 <- dweibull(x1, shape = a, scale = b)
+#plot(x1,y1,type="l")
 
-b <- exp(ratlik$par[1]) #redefine scale (no treatment)
-x0 <- seq(from=0,to=200,by=0.5)
-y0 <- dweibull(x0, shape = a, scale = b)
-plot(x0,y0,type="l")
+#b <- exp(ratlik$par[1]) #redefine scale (no treatment)
+#x0 <- seq(from=0,to=200,by=0.5)
+#y0 <- dweibull(x0, shape = a, scale = b)
+#plot(x0,y0,type="l")
 
 #plots appear to show that rats which received medicine died sooner.................
