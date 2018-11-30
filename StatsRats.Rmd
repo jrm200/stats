@@ -19,7 +19,8 @@ knitr::opts_chunk$set(echo = TRUE)
 * Brief outline of: the problem; what you have done; and your conclusions. 
 * Try not to use symbols/numbers 
 * concise
-* this needs editing  
+* does the drug treatment work? no
+* are the rats all cancerous?
 
 Following a drug trial that was carried out on 150 rats, this study aims to find out if the cancer treatment which has been used on is effective or not.  
 
@@ -41,20 +42,25 @@ This study is comprised of two main approaches of statistical analyses: frequent
 * Use fairly detailed explanation of methods incl any theory necessary
 * The reader should be able to repeat the study on the basis of the report.
 * Could split the methods section into 
-+ a pleliminary analysis, using graphical methods/ looking at simple descriptive methods if needed???
-+ then a full scale analysis
+  + a pleliminary analysis, using graphical methods/ looking at simple descriptive methods if needed??? 
+  + then a full scale analysis
 * and then second section (Maybe into two subsections)
-+ a description, explanation or development of the methodology used (this should be the most technical part of the report. It should describe detailed precise mathematical tools & techniques used)
-+ the actual analysis.
+  + a description, explanation or development of the methodology used (this should be the most technical part of the report. It should describe detailed precise mathematical tools & techniques used)
+  + the actual analysis.
 * Include the graphs to show how we obtained the starting points maybe as 3 in a row. i.e. par(mfrow=c(1,2))
 * The code for the functions
 
 ### Results, conclusions and recommendations
 * Give the main results and conclusions. 
 * Try to report your conclusion in context of the experiment from which the data came.
+* internal and external validity
+* only 40 of the rats actually had cancer. bigger sample size plz.
+* out of the 40 w tumor 21 received treatment?? lol
 
-### References
-?? Maybe not
+
+#### Internal/External Validity (within the conclusion)
+It can be seen from the data that for each litter, one in three of the rats were given the treatment, whilst the other two received only the control. Hence, fifty of the rats in total received treatment.
+60 of the rats died at week 104 this shows threat to external validity. y they all die???
 
 ### Appendices
 Maybe not??????
