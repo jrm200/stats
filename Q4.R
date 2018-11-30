@@ -6,11 +6,11 @@ X <- model.matrix(~ rx, rats) #define X matrix
 rats$litter <- factor(rats$litter)
 Z <- model.matrix(~ litter - 1, rats) #define Z matrix
 
-b <- rep(0, ncol(Z)) #set arbitrary b
+b <- rnorm(50,0,0.01) #set arbitrary b
 y <- rats$time #define y vector
-theta <- c(0,0,0,0) #arbitrary
+theta <- c(4.9831505, -0.2384417, -1.3324342, 0) #using weibullapprox from Q1, & small log(sigmab)
 
-lfyb <- function (theta, y, b, X, Z) {
+lfyb <- function (b, y, theta, X, Z) {
   #computes joint log density of y and b
   #first compute conditional density of y given b
   
@@ -41,14 +41,17 @@ lfyb <- function (theta, y, b, X, Z) {
   lf
 }
 
-#STARTED BUT NEEDS WORK
 lal <- function (theta, y, X, Z) {
   #compute the negative log likelihood of theta using the laplace approximation
   sig.b <- exp(theta[4])
   beta <- c(theta[1:2])
   eta <- X%*%beta
-  b <- rep(0,ncol(Z))
-  
-  lf <- lfyb(theta, y, b, X, Z)
-  optim(par=b, fn=lfyb)
+  ratz <- optim(b, lfyb, y=y,X=X,theta=theta,Z=Z, method="BFGS", hessian=TRUE)
+  bhat <- ratz$par
+  hess <- ratz$hessian
+  lapprox <- (2*pi)^(length(bhat)/2)/sqrt(prod(diag(hess)))*lfyb(b=bhat, y, theta, X, Z)
+  lapprox
 }
+
+#TOO MANY NANS
+thetahat <- optim(theta, lal, y=y,X=X,Z=Z,method="BFGS",hessian=TRUE)
