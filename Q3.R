@@ -2,7 +2,7 @@
 rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
 
 #define likelihood function to minimise
-ratlikelihood <- function (theta) {
+nll.llogistic <- function (theta) {
   #create subsets of data since for the likelihood function since the contribution to the likelihood varies
   #depending on the 'status' variable
   t0 <- rats[which(rats$status==0),,]$time
@@ -39,7 +39,7 @@ logsigvar <- 0
 for (i in 0:1000) {
   theta[1] <- 2.5 + i*0.005
   beta0[i+1] <- theta[1]
-  beta0var[i+1] <- ratlikelihood(theta)
+  beta0var[i+1] <- nll.llogistic(theta)
 }
 
 plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~5.75
@@ -48,7 +48,7 @@ theta <- c(0,0,0)
 for (i in 0:1000) {
   theta[2] <- 2.5 + i*0.005
   beta1[i+1] <- theta[2]
-  beta1var[i+1] <- ratlikelihood(theta)
+  beta1var[i+1] <- nll.llogistic(theta)
 }
 
 plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~5.25
@@ -57,13 +57,13 @@ theta <- c(0,0,0)
 for (i in 0:1000) {
   theta[3] <- i*0.005
   logsig[i+1] <- theta[3]
-  logsigvar[i+1] <- ratlikelihood(theta)
+  logsigvar[i+1] <- nll.llogistic(theta)
 }
 
 plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~2.25
 
 theta <- c(5.75,5.5,2.25)
-ratlik <- optim(theta, ratlikelihood, hessian=TRUE, method="Nelder-Mead")
+ratlik <- optim(theta, nll.llogistic, hessian=TRUE, method="Nelder-Mead")
 llogisticapprox <- ratlik$par
 
 #then to find the standard error, take the sqrt of the diag of the inverse hessian
@@ -73,16 +73,16 @@ stderr <- sqrt(diag(hess))
 #95% CI = parameter estimate +- ~1.96*stderr
 CI <- c(ratlik$par[2]+ qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
 
-a <- 1/exp(ratlik$par[3]) #shape
-b <- exp(ratlik$par[1] + ratlik$par[2]) #scale (received treatment)
+#a <- 1/exp(ratlik$par[3]) #shape
+#b <- exp(ratlik$par[1] + ratlik$par[2]) #scale (received treatment)
 
-x1 <- seq(from=0,to=200,by=0.5)
-y1 <- (a/b)*(x1/b)^(a-1)/(1+(x1/b)^a)^2
-plot(x1,y1,type="l")
+#x1 <- seq(from=0,to=200,by=0.5)
+#y1 <- (a/b)*(x1/b)^(a-1)/(1+(x1/b)^a)^2
+#plot(x1,y1,type="l")
 
-b <- exp(ratlik$par[1]) #redefine scale (no treatment)
-x0 <- seq(from=0,to=200,by=0.5)
-y0 <- (a/b)*(x0/b)^(a-1)/(1+(x0/b)^a)^2
-plot(x0,y0,type="l")
+#b <- exp(ratlik$par[1]) #redefine scale (no treatment)
+#x0 <- seq(from=0,to=200,by=0.5)
+#y0 <- (a/b)*(x0/b)^(a-1)/(1+(x0/b)^a)^2
+#plot(x0,y0,type="l")
 
 #plots appear to show that rats which received medicine died sooner.................
