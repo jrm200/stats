@@ -14,4 +14,7 @@ nll <- function (theta) {
   Nlik
 }
 
-loglik <- optim(theta, nll, method="BFGS")
+loglik <- optim(theta, nll, method="BFGS", hessian=TRUE)
+
+hess <- solve(loglik$hessian)
+se <- sqrt(diag(hess))
