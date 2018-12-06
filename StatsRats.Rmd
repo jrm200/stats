@@ -1,15 +1,15 @@
 ---
-title: 'MA40198: Applied Statistical Inference'
+  title: 'MA40198: Applied Statistical Inference'
 author: 
-- Candidate numbers 07604, 07614, 07615
+  - Candidate numbers 07604, 07614, 07615
 
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   pdf_document: default
-  html_document: default
+html_document: default
 ---
-
-```{r setup, include=FALSE}
+  
+  ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -19,10 +19,10 @@ knitr::opts_chunk$set(echo = TRUE)
 * Brief outline of: the problem; what you have done; and your conclusions. 
 * Try not to use symbols/numbers 
 * concise
-* does the drug treatment work? no
+* *does the drug treatment work?* ???????? Once found out, add this into abstract
 * are the rats all cancerous?
-
-Following a drug trial that was carried out on 150 rats, this study aims to find out if the cancer treatment which has been used on is effective or not.  
+  
+  Following a drug trial that was carried out on 150 rats, the purpose of this study is to try to find out if the method of treatment utilised was effective or not. This was done in a manner such that there were fifty different litters of rats, each with three rats per litter. The study saw one in three of the rats per litter being treated and the other two received only the control. 
 
 ### Introduction
 
@@ -33,44 +33,101 @@ Following a drug trial that was carried out on 150 rats, this study aims to find
 * Maybe we could include separations of the data i.e. look at specifically how many had tumours etc etc
 * Needs editing pls
 
-The recorded data includes the variables; *Litter*, observing 3 rats from each of the 50 different litters;  *Treatment Indicator*, where rx=1 indicates treatment was carried out on the rat and rx=0 indicates the control; *Time*, the follow up time in weeks to the appearance of a tumor; *Status*, which describes whether there was presence of a tumour status=1 or not status=0. 
+The recorded data includes the variables; *litter*, *treatment indicator* (where when rx is 1 indicates the treatment was carried out on the rat and where rx is 0 indicates the rat received the control only), *time* (the follow up time, in weeks, to the appearance of a tumour) and *status* (where status is 1 describes that the presence of a tumour and status is 0 implies there was no tumour).
 
-This study is comprised of two main approaches of statistical analyses: frequentist estimation procedures and Bayesian estimation procedures. Using both the Bayesian and Frequentist approach, probability models for the follow up time and the survival function have been distributed using the Weibull function. A Frequentist approach was also taken whilst modelling the data using a log-logistic distribution. 
+This study is comprised of two main approaches of statistical analyses: frequentist estimation procedures and Bayesian estimation procedures. Using both the Bayesian and Frequentist approach, probability models for the follow up time and the survival function have been distributed using the Weibull function. A Frequentist approach was also taken whilst constructing a probability model for the data, using a log-logistic distribution. 
 
 ### Methods
 
-* Use fairly detailed explanation of methods incl any theory necessary
+* Use fairly detailed explanation of methods incl. any theory necessary
 * The reader should be able to repeat the study on the basis of the report.
+
 * Could split the methods section into 
-  + a pleliminary analysis, using graphical methods/ looking at simple descriptive methods if needed??? 
++ a preliminary analysis, using graphical methods/looking at simple descriptive methods if needed??? 
   + then a full scale analysis
 * and then second section (Maybe into two subsections)
-  + a description, explanation or development of the methodology used (this should be the most technical part of the report. It should describe detailed precise mathematical tools & techniques used)
-  + the actual analysis.
++ a description, explanation or development of the methodology used (this should be the most technical part of the report. It should describe detailed precise mathematical tools & techniques used)
++ the actual analysis.
 * Include the graphs to show how we obtained the starting points maybe as 3 in a row. i.e. par(mfrow=c(1,2))
 * The code for the functions
 
-### Results, conclusions and recommendations
+*** preliminary analysis (first section) ***
+This bit for EDA
+
+*** detailed explanation of methods (Second section)***
+In the first instance, the dependent variable *time*, T_i has been taken to follow a Weibull distribution. 
+
+$$ T_i \sim \mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale}=\exp(\eta_i)), \ \ \ \ \ \ \ \ \eta_i=\beta_0 + \beta_1 x_i $$
+
+Whilst censored observations with rx=0 are described by the survival function of a Weibull distribution given by
+
+$$ S(t|\mbox{a,b})= \exp\bigg(-\bigg( \frac{t}{b}\bigg)^a\bigg), \ \ \ \ \ \ \ \ t> 0 $$ 
+
+The shape parameter in the model takes the form of frac{1}{/sigma} whilst the scale parameter is proportional to exp(\beta_0 + \beta_1 x_i). The data is modelled in this way, so that the basic assumptions of the data are not violated. The maximum likelihood estimate calculates an estimation of the population parameters such that the likelihood of obtaining the observed data is maximised. The vector of parameters that are to be estimated can be expressed as _\theta_^T=( \beta_0, \beta_1, log(\sigma)).
+
+Given all observations t_i are independent of one another, which we can assume to be true, the likelihood of the whole sample T_i is the product of the individual likelihoods over all observations t_i. Where $L$ is the likelihood, it can be defined as follows.
+
+$$ L=L_1 \times L_2 \times ... \times L_N = \prod^N_{i=1}{L_i} = P(y_1| \boldsymbol{\hat{\theta}}) \times P(y_2| \boldsymbol{\hat{\theta}}) \times ... \times P(y_N| \boldsymbol{\hat{\theta}}) = \prod^N_{i=1} P(y_i|\boldsymbol{\hat{\theta}} ) $$
+It is true that the likelihood will always be positive and since the \log function is a non decreasing function, if we transform the likelihood by taking the \log of it, it's maxima will remain in the same position. When working with \log it is more versatile as the sum of the log of the likelihood can be taken, as shown below.
+
+$$ \log(L) = \sum_{i=1}^N \log(P(y_i| \boldsymbol{ \hat{\theta}}))  $$
+
+
+A function to describe the likelihood of the parameters _\theta_ is defined as below.
+
+_*insert R code for nll.weibull function*_
+
+In the code it can be seen that *K* is taken to be the shaping parameter of the Weibull distribution. Given that the third element in _\theta_ is proportional to log(\sigma), the exponent of \sigma has been taken in order to neutralise this.
+
+The data is then analysed in such a way that the probability model takes on a log-logistic distribution as seen below. With the same shape and scale parameters as in the Weibull model.
+
+$$ T_i \sim \mbox{log-logistic}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale} = \exp(\eta_i)),\  \ \ \ \ \  \ \  \eta_i = \beta_0 + \beta_1 x_i $$
+
+Whilst the survival function of a log-logistic distribution can be expressed as.
+
+$$ S(t|\mbox{a,b}) = \exp\bigg(- \log\bigg( 1 + \bigg(\frac{t}{b}\bigg)^a\bigg)\bigg), \  \ \ \ \ \ \ t > 0$$
+*add in  *
+
+Following on from this, the Weibull distribution was again considered, but with added random effect _b_ taken into consideration. So we can now see the scale of the Weibull distribution is then altered to the exponent of \eta_i. Where \eta_i is now as follows:
+$$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
+
+*** analysis of data ***
+
+
+```{r}
+
+```
+
+
+
+### Results
+* what came out of the analysis
+
+
+
+###conclusions and recommendations
 * Give the main results and conclusions. 
 * Try to report your conclusion in context of the experiment from which the data came.
 * internal and external validity
 * only 40 of the rats actually had cancer. bigger sample size plz.
-* out of the 40 w tumor 21 received treatment?? lol
+* out of the 40 w tumour 21 received treatment?? lol
 
 
 #### Internal/External Validity (within the conclusion)
 It can be seen from the data that for each litter, one in three of the rats were given the treatment, whilst the other two received only the control. Hence, fifty of the rats in total received treatment.
 60 of the rats died at week 104 this shows threat to external validity. y they all die???
-
-### Appendices
-Maybe not??????
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
+  
+  ### Appendices
+  Maybe not??????
+  
+  ## Including Plots
+  
+  You can also embed plots, for example:
+  3
+  ```{r pressure, echo=FALSE}
 plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+\newpage
