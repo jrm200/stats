@@ -97,7 +97,7 @@ nll.weibull <- function (theta) {
 ```
 
 
-Initially, the function describing the negative log likelihood that seeks to be maximised has been defined as "nll.weibull". This function includes subsetted data, so that the optimal $\boldsymbol{\theta}$ can be calculated. The use of subsetting is due to the fact that the survival function $S(t| \mbox{a,b})$ does not depend on $\boldsymbol{\theta}$ when the rats died prior to appearance of a tumor. These subsets are defined in lines 5-8 in the $R$ code above. Variable $\boldsymbol{t_0}$ defines a vector of the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{rx_1}$ defines a vector the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{t_1}$ defines a vector of the treatment indicator with respect to only the rats that died before the appearance of a tumor and lastly, $\boldsymbol{rx_0}$ defines a vector of the treatment indicator with respect to only the rats that died.
+Initially, the function describing the negative log likelihood that seeks to be maximised has been defined as \texttt{nll.weibull}. This function includes subsetted data, so that the optimal $\boldsymbol{\theta}$ can be calculated. The use of subsetting is due to the fact that the survival function $S(t| \mbox{a,b})$ does not depend on $\boldsymbol{\theta}$ when the rats died prior to appearance of a tumor. These subsets are defined in lines 5-8 in the $R$ code above. Variable $\boldsymbol{t_0}$ defines a vector of the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{rx_1}$ defines a vector the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{t_1}$ defines a vector of the treatment indicator with respect to only the rats that died before the appearance of a tumor and lastly, $\boldsymbol{rx_0}$ defines a vector of the treatment indicator with respect to only the rats that died.
 
 In order to compute the log likelihood for the censored observations, the shape and scale parameters of the survival function have been define as below. Given that the third element in $\boldsymbol{\theta}$ is proportional to $\log(\sigma)$, the exponent of $\sigma$ has been taken.
 $$ \mbox{Shape}=\frac{1}{\exp(\sigma)}, \ \ \ \ \ \mbox{Scale} = \exp(\beta_0 + \beta_1rx_0) $$
@@ -108,14 +108,102 @@ Since the method of finding the MLE has utilised the $\mbox{optim}$ function in 
 $$ (L) _{rx=0}= - \sum -\log\bigg(\exp\bigg(-\bigg(\frac{t_0}{\lambda}\bigg)^k\bigg) \\
 =\sum \bigg(\frac{t_0}{\lambda}\bigg)^k, \ \ \ \ \ \ \ \ t_0 > 0 $$ 
 
-In order to compute the likelihood of the observations in which the appearance of a tumor occured, the shape and scale parameters were passed to the $\mbox{dweibull}$ function built in to $R$. The shape and scale parameters for this probability model are defined below.
+In order to compute the likelihood of the observations in which the appearance of a tumor occured, the shape and scale parameters were passed to the \texttt{dweibull} function built in to $R$. The shape and scale parameters for this probability model are defined below.
 
 $$ \mbox{shape}= \frac{1}{\exp(\sigma)}, \ \ \ \ \ \ \ \ \mbox{scale}=\exp(\beta_0 + \beta_{1} rx_{1}) $$ 
-The $\mbox{dweibull}$ function has also been passed $t_1$ as the dependent variable as this distribution is only concerned with the observations that had a tumor appearance. The scale parameter $\beta_0$ is also only altered by the treatment indicator when the rats did not die prior to the appearance of a tumor. The negative sum is taken with the same reasoning as above. This likelihood is defined in the $R$ code in line 12.
+The \texttt{dweibull} function has also been passed $t_1$ as the dependent variable as this distribution is only concerned with the observations that had a tumor appearance. The scale parameter $\beta_0$ is also only altered by the treatment indicator when the rats did not die prior to the appearance of a tumor. The negative sum is taken with the same reasoning as above. This likelihood is defined in the $R$ code in line 12.
 
-The sum of the two different likelihoods are then combined in line 14 to create a combined likelihood for both censored and uncensored observations and then this element of the function is returned.
+The sum of the two different likelihoods are then combined in line 14 to create a combined likelihood for both censored and uncensored observations.
 
-$$ -\log(L) = -\sum_{i=1}^N \log(P(t_i| \boldsymbol{ \hat{\theta}}))  $$
+The function \texttt{nll.weibull} has been optimised in order to obtain the maximum likelihood estimate of the parameter $\boldsymbol{\theta}$, using the built in \texttt{optim} function in $R$. The initial point has been obtained by plotting graphs of each of the parameters versus its variance. The plots have then been observed to seek the value where the variance appears to be lowest. The graphs are displayed below.
+```{r,echo=FALSE,message=FALSE, fig.height=2.5}
+rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
+nll.weibull <- function (theta) {
+  #create subset of data since for the purposes of calculating the optimal theta since 
+  #when status = 0, the survival function does not depend on theta. Need to optimise this 
+  #function using optim.
+  t1 <- rats[which(rats$status==1),,]$time
+  rx1 <- rats[which(rats$status==1),,]$rx
+  t0 <- rats[which(rats$status==0),,]$time
+  rx0 <- rats[which(rats$status==0),,]$rx
+  #compute the negative log likelihood
+  k <- 1/exp(theta[3]) #shape 
+  lambda <- exp(theta[1] + theta[2]*rx0) #scale with censoring
+  loglik1 <- -sum(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1), log=TRUE))
+  loglik2 <- sum((t0/lambda)^k)
+  loglik <- loglik1 + loglik2
+  loglik
+}
+theta <- c(0,0,0)
+beta0 <- theta[1]
+beta1 <- theta[2]
+logsig <- theta[3]
+beta0var <- 0
+beta1var <- 0
+logsigvar <- 0
+
+par(mfrow=c(1,3))
+for (i in 0:1000) {
+  theta[1] <- 4.5 + i*0.0025
+  beta0[i+1] <- theta[1]
+  beta0var[i+1] <- nll.weibull(theta)
+}
+
+plot(beta0, beta0var, type="l", xlab=expression(beta[0]), ylab="Variance") 
+
+theta <- c(0,0,0)
+for (i in 0:1000) {
+  theta[2] <- 4 + i*0.0025
+  beta1[i+1] <- theta[2]
+  beta1var[i+1] <- nll.weibull(theta)
+}
+
+plot(beta1, beta1var, type="l", xlab=expression(beta[1]), ylab="Variance") #estimate optimal beta1 to be ~5.25
+
+
+theta <- c(0,0,0)
+for (i in 0:1000) {
+  theta[3] <- 1.5 + i*0.005
+  logsig[i+1] <- theta[3]
+  logsigvar[i+1] <- nll.weibull(theta)
+}
+
+plot(logsig, logsigvar, type="l", xlab=expression(log(sigma)), ylab="Variance") #estimate optimal logsigma to be ~2.75
+
+
+```
+
+The minimum variance for each of the parameters appears to be at approximately $\boldsymbol{\theta}= (5.75,5.25,2.75)$ and hence this will be taken as the initial point to proceed with the optimization.
+
+The \texttt{optim} function works in such a way that seeks to optimize the given parameters using the given funtion which it will minimize by default. Since the \texttt{nll.weibull} function has been negated, \texttt{optim} will return the maximum likelihood estimate. The \texttt{optim} has been instructed to use the Nelder-Mead optimization method, The optimisation can be seen in the $R$ code below.
+
+```{#numCode .R .numberLines}
+theta <- c(5.75,5.25,2.75)
+ratlik <- optim(theta, nll.weibull, hessian=TRUE, method="Nelder-Mead")
+```
+
+
+
+The returned, optimized vector of parameters $\boldsymbol{\hat{\theta}}$, the returned maximum value for the function and the convergence is seen as below.
+
+```{r,echo=FALSE,message=FALSE}
+theta <- c(5.75,5.25,2.75)
+ratlik <- optim(theta, nll.weibull, hessian=TRUE, method="Nelder-Mead")
+weibullapprox <- ratlik$par
+
+#then to find the standard error, take the sqrt of the diag of the inverse hessian
+hess <- solve(ratlik$hessian)
+stderr <- sqrt(diag(hess))
+
+#95% CI = parameter estimate +- ~1.96*stderr
+CI <- c(ratlik$par[2]+qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
+weibullapprox
+ratlik$value
+ratlik$convergence
+
+```
+
+
 
 
 The data is then analysed in such a way that the probability model takes on a log-logistic distribution as seen below. With the same shape and scale parameters as in the Weibull model.
@@ -131,16 +219,11 @@ Following on from this, the Weibull distribution was again considered, but with 
 $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
 
 ###analysis of data 
-* Talk about weibull, loglik and weibull w random effects
-* explain how random effects aletered the weibull distribution
-* talk about how functions were initialised in r
-* explain how the starting points were chosen
-* talk about confidence intervals and how they were computed.
-
-
-```{r}
-
-```
+* Talk about weibull, loglik and weibull w random effects  
+* explain how random effects aletered the weibull distribution  
+* talk about how functions were initialised in r  
+* explain how the starting points were chosen  
+* talk about confidence intervals and how they were computed.  
 
 
 
@@ -152,11 +235,11 @@ $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
 
 ###conclusions and recommendations
 
-* Give the main results and conclusions. 
-* Try to report your conclusion in context of the experiment from which the data came.
-* internal and external validity
-* only 40 of the rats actually had cancer. bigger sample size plz.
-* out of the 40 w tumor 21 received treatment?? lol
+* Give the main results and conclusions.  
+* Try to report your conclusion in context of the experiment from which the data came. 
+* internal and external validity 
+* only 40 of the rats actually had cancer. bigger sample size plz.   
+* out of the 40 w tumor 21 received treatment?? lol  
 
 
 #### Internal/External Validity (within the conclusion)
