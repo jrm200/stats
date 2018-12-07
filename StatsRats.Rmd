@@ -15,10 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 * Brief outline of: the problem; what you have done; and your conclusions. 
 * Try not to use symbols/numbers 
 * concise
-* *does the drug treatment work*???????? Once found out, add this into abstract
-* are the rats all cancerous?
-  
-Following a drug trial that was carried out on 150 rats, the purpose of this study is to try to find out if the method of treatment utilised was effective or not. This was done in a manner such that there were fifty different litters of rats, each with three rats per litter. The study saw one in three of the rats per litter being treated and the other two received only the control. 
+* does the drug treatment work???????? Once found out, add this into abstract
+
+Following a drug trial that was carried out on 150 rats, this study seeks to achieve an answer as to whether the method of cancer treatment is effective or not. 
+
+Under the conditions of this study, there was very little to no evidence suggesting that the treatment used was a preventer of cancer within the observed population of rats.
 
 ### Introduction
 
@@ -26,17 +27,18 @@ Following a drug trial that was carried out on 150 rats, the purpose of this stu
 * Talk about aims of the investigation 
 * Indicate the methods used
 * Expanded version of the abstract
-* Maybe we could include separations of the data i.e. look at specifically how many had tumours etc etc
 * Needs editing pls
 
-The recorded data includes the variables: __Litter__- comprised of 3 rats pertaining to 50 different litters, __Treatment Indicator__- when $rx=1$ indicates the treatment was carried out on the rat and where $rx=0$ indicates the rat received the control/placebo only, __Time__- the follow up time, in weeks, to the appearance of a tumour, __Status__- $status=1$ describes that the presence of a tumour and $status=0$ implies the rat died before the presence of a tumour.
+The recorded data includes the variables: __Litter__- comprised of three rats pertaining to fifty different litters, __Treatment Indicator__- when $rx=1$ indicates the treatment was carried out on the rat and where $rx=0$ indicates the rat received the control/placebo only, __Time__- the follow up time, in weeks, to the appearance of a tumor, __Status__- status$=1$ describes that the presence of a tumor and status$=0$ implies the rat died before the presence of a tumor.
+
+The drug trial was carried out on solely female rats in a controlled environment and saw one in three of the rats per litter being treated for cancer whilst the other two received a placebo "treatment" only. Following the treatment, the rats were detained and observed. If a tumor appeared on a rat or if the rat died, the occurance was recorded at the specific time in weeks, indicating which of the two outcomes occurred. This drug trial was carried out with the motivation to discover whether or not the method of cancer treatment used was effective or not.
 
 Using Maximum Likelihood Estimation, this study is comprised of two main approaches of statistical analyses: frequentist estimation procedures and Bayesian estimation procedures. Using both the Bayesian and Frequentist approach, probability models for the follow up time and the survival function have been distributed using the Weibull function. A Frequentist approach was also taken whilst constructing a probability model for the data, using a log-logistic distribution. 
 
 ### Methods
 
 * Use fairly detailed explanation of methods incl. any theory necessary
-* The reader should be able to repeat the study on the basis of the report.
+* __The reader should be able to repeat the study on the basis of the report__
 
 * Could split the methods section into 
 + a preliminary analysis, using graphical methods/looking at simple descriptive methods if needed??? 
@@ -47,14 +49,22 @@ Using Maximum Likelihood Estimation, this study is comprised of two main approac
 * Include the graphs to show how we obtained the starting points maybe as 3 in a row. i.e. par(mfrow=c(1,2))
 * The code for the functions
 
-###preliminary analysis (first section)
+###preliminary analysis (first section) / EDA
 
-This bit for EDA
+* Maybe we could include separations of the data i.e. look at specifically how many had tumors etc etc
 
 ###detailed explanation of methods (Second section)
+* Include Weibull, loglik, weibull w/ random effects-- marginal neg loglik on laplace &joint log density
 
-In the first instance, the dependent variable Time described by $T_i$, has been taken to follow a Weibull distribution as the data does not comply with the assumptions of normality. The distribution is as below.
+Upon the first approach to the MLE problem, the dependent variable time described by $T_i$, has been taken to follow a Weibull distribution as we cannot assume that the data does not complies with the assumptions of normality. The distribution is as below.
 $$ T_i \sim \mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale}=\exp(\eta_i)), \ \ \ \ \ \ \ \ \eta_i=\beta_0 + \beta_1 x_i $$
+where
+$$x_i=\left\{
+\begin{array}{cl}
+1 & \mbox{rat $i$ received treatment} \\
+0 & \mbox{rat $i$ received control}\\
+\end{array}
+\right.$$ 
 It can be seen from the above that the shape parameter in the model takes the form of $\frac{1}{\sigma}$ whilst the scale parameter is proportional to $\exp(\beta_0 + \beta_1 x_i)$. Censored observations, where the Treatment Indicator, $rx=0$, implied that the rat received only the control, are described by the survival function of a Weibull distribution given as follows.
 $$ S(t|\mbox{a,b})= \exp\bigg(-\bigg( \frac{t}{b}\bigg)^a\bigg), \ \ \ \ \ \ \ \ t> 0 $$ 
 The maximum likelihood estimate calculates an estimation of the population parameters such that the likelihood of obtaining the observed data is maximised. The vector of parameters that are to be estimated can be expressed as $\boldsymbol{\theta}^T=( \beta_0, \beta_1, \log(\sigma))$.
@@ -62,15 +72,51 @@ The maximum likelihood estimate calculates an estimation of the population param
 Given all observations $t_i$ are independent of one another, which we can assume to be true, the likelihood of the whole sample $T_i$ is the product of the individual likelihoods over all observations $t_i$. Where $L$ is the likelihood, it can be defined as follows.
 
 $$ L=L_1 \times L_2 \times ... \times L_N = \prod^N_{i=1}{L_i} = P(y_1| \boldsymbol{\hat{\theta}}) \times P(y_2| \boldsymbol{\hat{\theta}}) \times ... \times P(y_N| \boldsymbol{\hat{\theta}}) = \prod^N_{i=1} P(y_i|\boldsymbol{\hat{\theta}} ) $$
-It is true that the likelihood will always be positive and since the $\log$ function is a non decreasing function, if we transform the likelihood by taking the $\log$ of it, it's maxima will remain in the same position. When working with $\log$ it is more versatile as the sum of the log of the likelihood can be taken, as shown below.
-
-$$ \log(L) = \sum_{i=1}^N \log(P(y_i| \boldsymbol{ \hat{\theta}}))  $$
+It is true that the likelihood will always be positive and since the $\log$ function is a non decreasing function, if we transform the likelihood by taking the $\log$ of it, it's maxima will remain in the same position. When working with $\log$ it is more versatile as the sum of the log of the likelihood can be taken.
 
 A function to describe the likelihood of the parameters $\boldsymbol{\theta}$ is defined in $R$ as below.
 
-###insert R code for nll.weibull function
 
-In the code it can be seen that $K$ is taken to be the shaping parameter of the Weibull distribution. Given that the third element in $\boldsymbol{\theta}$ is proportional to $\log(\sigma)$, the exponent of $\sigma$ has been taken in order to neutralise this.
+```{#numCode .R .numberLines}
+nll.weibull <- function (theta) {
+  #create subset of data since for the purposes of calculating the optimal theta since 
+  #when status = 0, the survival function does not depend on theta. Need to optimise this 
+  #function using optim.
+  t1 <- rats[which(rats$status==1),,]$time
+  rx1 <- rats[which(rats$status==1),,]$rx
+  t0 <- rats[which(rats$status==0),,]$time
+  rx0 <- rats[which(rats$status==0),,]$rx
+  #compute the negative log likelihood
+  k <- 1/exp(theta[3]) #shape 
+  lambda <- exp(theta[1] + theta[2]*rx0) #scale with censoring
+  loglik1 <- -sum(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1), log=TRUE))
+  loglik2 <- sum((t0/lambda)^k)
+  loglik <- loglik1 + loglik2
+  loglik
+}
+```
+
+
+Initially, the function describing the negative log likelihood that seeks to be maximised has been defined as "nll.weibull". This function includes subsetted data, so that the optimal $\boldsymbol{\theta}$ can be calculated. The use of subsetting is due to the fact that the survival function $S(t| \mbox{a,b})$ does not depend on $\boldsymbol{\theta}$ when the rats died prior to appearance of a tumor. These subsets are defined in lines 5-8 in the $R$ code above. Variable $\boldsymbol{t_0}$ defines a vector of the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{rx_1}$ defines a vector the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{t_1}$ defines a vector of the treatment indicator with respect to only the rats that died before the appearance of a tumor and lastly, $\boldsymbol{rx_0}$ defines a vector of the treatment indicator with respect to only the rats that died.
+
+In order to compute the log likelihood for the censored observations, the shape and scale parameters of the survival function have been define as below. Given that the third element in $\boldsymbol{\theta}$ is proportional to $\log(\sigma)$, the exponent of $\sigma$ has been taken.
+$$ \mbox{Shape}=\frac{1}{\exp(\sigma)}, \ \ \ \ \ \mbox{Scale} = \exp(\beta_0 + \beta_1rx_0) $$
+The scale is altered by $rx_0$, since we are considering the treatment indicator based on only censored observations. The shape can be referred to as $k$ whilst the scale can be referred to as $\lambda$. 
+
+Since the method of finding the MLE has utilised the $\mbox{optim}$ function in $R$, the negative log likelihoods are computed, as $\mbox{optim}$ optimises the given function and seeks the minimum value. The likelihood for censored observations has been defined below and can be seen in the $R$ code line 13.
+
+$$ (L) _{rx=0}= - \sum -\log\bigg(\exp\bigg(-\bigg(\frac{t_0}{\lambda}\bigg)^k\bigg) \\
+=\sum \bigg(\frac{t_0}{\lambda}\bigg)^k, \ \ \ \ \ \ \ \ t_0 > 0 $$ 
+
+In order to compute the likelihood of the observations in which the appearance of a tumor occured, the shape and scale parameters were passed to the $\mbox{dweibull}$ function built in to $R$. The shape and scale parameters for this probability model are defined below.
+
+$$ \mbox{shape}= \frac{1}{\exp(\sigma)}, \ \ \ \ \ \ \ \ \mbox{scale}=\exp(\beta_0 + \beta_{1} rx_{1}) $$ 
+The $\mbox{dweibull}$ function has also been passed $t_1$ as the dependent variable as this distribution is only concerned with the observations that had a tumor appearance. The scale parameter $\beta_0$ is also only altered by the treatment indicator when the rats did not die prior to the appearance of a tumor. The negative sum is taken with the same reasoning as above. This likelihood is defined in the $R$ code in line 12.
+
+The sum of the two different likelihoods are then combined in line 14 to create a combined likelihood for both censored and uncensored observations and then this element of the function is returned.
+
+$$ -\log(L) = -\sum_{i=1}^N \log(P(t_i| \boldsymbol{ \hat{\theta}}))  $$
+
 
 The data is then analysed in such a way that the probability model takes on a log-logistic distribution as seen below. With the same shape and scale parameters as in the Weibull model.
 
@@ -84,7 +130,12 @@ $$ S(t|\mbox{a,b}) = \exp\bigg(- \log\bigg( 1 + \bigg(\frac{t}{b}\bigg)^a\bigg)\
 Following on from this, the Weibull distribution was again considered, but with added random effect $b$ taken into consideration. So we can now see the scale of the Weibull distribution is then altered to the exponent of $\eta_i$. Where $\eta_i$ is now as follows:
 $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
 
-*** analysis of data ***
+###analysis of data 
+* Talk about weibull, loglik and weibull w random effects
+* explain how random effects aletered the weibull distribution
+* talk about how functions were initialised in r
+* explain how the starting points were chosen
+* talk about confidence intervals and how they were computed.
 
 
 ```{r}
@@ -105,7 +156,7 @@ $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
 * Try to report your conclusion in context of the experiment from which the data came.
 * internal and external validity
 * only 40 of the rats actually had cancer. bigger sample size plz.
-* out of the 40 w tumour 21 received treatment?? lol
+* out of the 40 w tumor 21 received treatment?? lol
 
 
 #### Internal/External Validity (within the conclusion)
