@@ -12,22 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Carcinogenesis Study on Rats
 
 ### Abstract
-* Brief outline of: the problem; what you have done; and your conclusions. 
-* Try not to use symbols/numbers 
-* concise
-* does the drug treatment work???????? Once found out, add this into abstract
 
 Following a drug trial that was carried out on 150 rats, this study seeks to achieve an answer as to whether the method of cancer treatment is effective or not. 
 
 Under the conditions of this study, there was very little to no evidence suggesting that the treatment used was a preventer of cancer within the observed population of rats.
 
 ### Introduction
-
-* This should describe the general context and background, including a general description of what data are available, the manner in which they were collected. 
-* Talk about aims of the investigation 
-* Indicate the methods used
-* Expanded version of the abstract
-* Needs editing pls
 
 The recorded data includes the variables: __Litter__- comprised of three rats pertaining to fifty different litters, __Treatment Indicator__- when $rx=1$ indicates the treatment was carried out on the rat and where $rx=0$ indicates the rat received the control/placebo only, __Time__- the follow up time, in weeks, to the appearance of a tumor, __Status__- status$=1$ describes that the presence of a tumor and status$=0$ implies the rat died before the presence of a tumor.
 
@@ -36,23 +26,6 @@ The drug trial was carried out on solely female rats in a controlled environment
 Using Maximum Likelihood Estimation, this study is comprised of two main approaches of statistical analyses: frequentist estimation procedures and Bayesian estimation procedures. Using both the Bayesian and Frequentist approach, probability models for the follow up time and the survival function have been distributed using the Weibull function. A Frequentist approach was also taken whilst constructing a probability model for the data, using a log-logistic distribution. 
 
 ### Methods
-
-* Use fairly detailed explanation of methods incl. any theory necessary
-* __The reader should be able to repeat the study on the basis of the report__
-
-* Could split the methods section into 
-+ a preliminary analysis, using graphical methods/looking at simple descriptive methods if needed??? 
-  + then a full scale analysis
-* and then second section (Maybe into two subsections)
-+ a description, explanation or development of the methodology used (this should be the most technical part of the report. It should describe detailed precise mathematical tools & techniques used)
-+ the actual analysis.
-* Include the graphs to show how we obtained the starting points maybe as 3 in a row. i.e. par(mfrow=c(1,2))
-* The code for the functions
-
-###preliminary analysis (first section) / EDA
-
-* Maybe we could include separations of the data i.e. look at specifically how many had tumors etc etc
-
 ###detailed explanation of methods (Second section)
 * Include Weibull, loglik, weibull w/ random effects-- marginal neg loglik on laplace &joint log density
 
@@ -97,9 +70,9 @@ nll.weibull <- function (theta) {
 ```
 
 
-Initially, the function describing the negative log likelihood that seeks to be maximised has been defined as \texttt{nll.weibull}. This function includes subsetted data, so that the optimal $\boldsymbol{\theta}$ can be calculated. The use of subsetting is due to the fact that the survival function $S(t| \mbox{a,b})$ does not depend on $\boldsymbol{\theta}$ when the rats died prior to appearance of a tumor. These subsets are defined in lines 5-8 in the $R$ code above. Variable $\boldsymbol{t_0}$ defines a vector of the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{rx_1}$ defines a vector the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{t_1}$ defines a vector of the treatment indicator with respect to only the rats that died before the appearance of a tumor and lastly, $\boldsymbol{rx_0}$ defines a vector of the treatment indicator with respect to only the rats that died.
+Initially, the function describing the negative log likelihood that will be maximised has been defined as \texttt{nll.weibull}. This function includes subsetted data, so that the optimal $\boldsymbol{\theta}$ can be calculated. The use of subsetting is due to the fact that the survival function $S(t| \mbox{a,b})$ does not depend on $\boldsymbol{\theta}$ when the rats died prior to appearance of a tumor. These subsets are defined in lines 5-8 in the $R$ code above. Variable $\boldsymbol{t_0}$ defines a vector of the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{rx_1}$ defines a vector the treatment indicator with respect to only the rats that did not die before the appearance of a tumor, $\boldsymbol{t_1}$ defines a vector of the treatment indicator with respect to only the rats that died before the appearance of a tumor and lastly, $\boldsymbol{rx_0}$ defines a vector of the treatment indicator with respect to only the rats that died.
 
-In order to compute the log likelihood for the censored observations, the shape and scale parameters of the survival function have been define as below. Given that the third element in $\boldsymbol{\theta}$ is proportional to $\log(\sigma)$, the exponent of $\sigma$ has been taken.
+In order to compute the log likelihood for the censored observations, the shape and scale parameters of the survival function have been defined as below. Given that the third element in $\boldsymbol{\theta}$ is proportional to $\log(\sigma)$, the exponent of $\sigma$ has been taken.
 $$ \mbox{Shape}=\frac{1}{\exp(\sigma)}, \ \ \ \ \ \mbox{Scale} = \exp(\beta_0 + \beta_1rx_0) $$
 The scale is altered by $rx_0$, since we are considering the treatment indicator based on only censored observations. The shape can be referred to as $k$ whilst the scale can be referred to as $\lambda$. 
 
@@ -115,7 +88,49 @@ The \texttt{dweibull} function has also been passed $t_1$ as the dependent varia
 
 The sum of the two different likelihoods are then combined in line 14 to create a combined likelihood for both censored and uncensored observations.
 
-The function \texttt{nll.weibull} has been optimised in order to obtain the maximum likelihood estimate of the parameter $\boldsymbol{\theta}$, using the built in \texttt{optim} function in $R$. The initial point has been obtained by plotting graphs of each of the parameters versus its variance. The plots have then been observed to seek the value where the variance appears to be lowest. The graphs are displayed below.
+```{#numCode .R .numberLines}
+#initialise the variables
+theta <- c(0,0,0)
+beta0 <- theta[1]
+beta1 <- theta[2]
+logsig <- theta[3]
+beta0var <- 0
+beta1var <- 0
+logsigvar <- 0
+
+for (i in 0:1000) {
+  theta[1] <- 4.5 + i*0.0025
+  beta0[i+1] <- theta[1]
+  beta0var[i+1] <- nll.weibull(theta)
+}
+
+plot(beta0, beta0var, type="l", xlab=expression(beta[0]), ylab="Variance") #estimate optimal beta0 to be ~5.75
+
+theta <- c(0,0,0)
+for (i in 0:1000) {
+  theta[2] <- 4 + i*0.0025
+  beta1[i+1] <- theta[2]
+  beta1var[i+1] <- nll.weibull(theta)
+}
+
+plot(beta1, beta1var, type="l", xlab=expression(beta[1]), ylab="Variance") #estimate optimal beta1 to be ~5.25
+
+
+theta <- c(0,0,0)
+for (i in 0:1000) {
+  theta[3] <- 1.5 + i*0.005
+  logsig[i+1] <- theta[3]
+  logsigvar[i+1] <- nll.weibull(theta)
+}
+
+plot(logsig, logsigvar, type="l", xlab=expression(log(sigma)), ylab="Variance") #estimate optimal logsigma to be ~2.75
+
+
+```
+```
+
+
+The function \texttt{nll.weibull} has been optimised in order to obtain the maximum likelihood estimate of the parameter $\boldsymbol{\theta}$, using the built in \texttt{optim} function in $R$. The initial point has been obtained by plotting graphs of each of the parameters versus its variance. The plots have been observed to estimate the value where the variance appears to be lowest. The graphs are displayed below.
 ```{r,echo=FALSE,message=FALSE, fig.height=2.5}
 rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
 nll.weibull <- function (theta) {
@@ -182,10 +197,10 @@ theta <- c(5.75,5.25,2.75)
 ratlik <- optim(theta, nll.weibull, hessian=TRUE, method="Nelder-Mead")
 ```
 
+The function \texttt{nll.weibull} has been minimised using optim, hence the log likelihood has been maximised with respect to the initial values of theta $\boldsymbol{\theta}$ using the Nelder-Mead method in \texttt{optim}. The first argument in optim provides the initial parameter values $\boldsymbol{\theta}$ from which to start the optimisation. The next argument is the objective function, \texttt{nll.weibulll}. The first argument of the function \texttt{nll.weibulll} is required to be the vector of parameters which need to be optimised. Hessian=TRUE is an argument passed to \texttt{optim} so that it will return an appropriate hessian matrix at the convergence. The Nelder-Mead method is instructed to be used. It is the default method of optimisation that \texttt{optim} uses.
 
-
-The returned, optimized vector of parameters $\boldsymbol{\hat{\theta}}$, the returned maximum value for the function and the convergence is seen as below.
-
+The returned, objects can be seen below.
+\texttt{par}
 ```{r,echo=FALSE,message=FALSE}
 theta <- c(5.75,5.25,2.75)
 ratlik <- optim(theta, nll.weibull, hessian=TRUE, method="Nelder-Mead")
@@ -198,56 +213,265 @@ stderr <- sqrt(diag(hess))
 #95% CI = parameter estimate +- ~1.96*stderr
 CI <- c(ratlik$par[2]+qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
 weibullapprox
-ratlik$value
-ratlik$convergence
+
 
 ```
+\texttt{value}
+```{r,echo=FALSE,message=FALSE}
+ratlik$value
 
+```
+\texttt{counts}
+```{r,echo=FALSE,message=FALSE}
+ratlik$counts
 
+```
+\texttt{convergence}
+```{r,echo=FALSE,message=FALSE}
+ratlik$convergence
+```
+The returned object \texttt{ratlik} is made up of several elements as can be seen above. The \texttt{par} contains the missing parameter values, the maximum likelihood estimates $\boldsymbol{\hat{\theta}}$, \texttt{value} contains the value of the objective function at the maximum and \texttt{counts} indicates how many function evaluations were required in order to terminate the optimization, \texttt{convergence}, when equal to $0$ indicates that the Nelder-Mead method converged at a minimum value for the negative log likelihood. 
 
+The asymptotic standard error of the parameter estimates, $\boldsymbol{\hat{\theta}}$ can be calculated using the hessian. The inverse of the approximated hessian is the asymptotic variance of the MLE and so the standard errors can be calculated by taking the square root of the diagonal elements of the asymptotic variance. This has been executed in $R$ and shown below.
 
-The data is then analysed in such a way that the probability model takes on a log-logistic distribution as seen below. With the same shape and scale parameters as in the Weibull model.
+```{#numCode .R .numberLines}
+#then to find the standard error, take the sqrt of the diag of the inverse hessian
+hess <- solve(ratlik$hessian)
+stderr <- sqrt(diag(hess))
+```
+
+The $96$% confidence intervals have been calculated in the $R$ code below.
+
+```{#numCode .R .numberLines}
+CI <- c(ratlik$par[2]+qnorm(0.025)*stderr[2], ratlik$par[2]+qnorm(0.975)*stderr[2])
+LCI <- exp(weibullapprox - 2*stderr)
+UCI <- exp(weibullapprox + 2*stderr)
+```
+
+The output for the lower (\texttt{LCI}) and upper (\texttt{UCI}) confidence intervals are displayed, respectively, below.
+
+```{r,echo=FALSE,message=FALSE}
+LCI <- exp(weibullapprox - 2*stderr)
+UCI <- exp(weibullapprox + 2*stderr)
+LCI
+UCI
+```
+
+The interval for $\beta_0$ is relatively wide. The correlation matrix has be computed as using the code below. The interval for $\beta_1$ appears to be relatively wide also.
+
+```{#numCode .R .numberLines}
+#estimated correlation matrix of theta hat
+corrmat <- diag(1/stderr)%*%hess%*%(diag(1/stderr))
+```
+\texttt{corrmat} 
+```{r,echo=FALSE,message=FALSE}
+corrmat <- diag(1/stderr)%*%hess%*%(diag(1/stderr))
+corrmat 
+```
+Looking at \texttt{corrmat} we can see that $\beta_1$ has quite a strong negative correlation of approximately $-0.732$ with $\beta_0$ and $\beta_1$ and $\log(\sigma)$ are moderately correlated with one another with a value of $0.-0.348$. This explains why the confidence intervals for $\beta_0$, are quite wide.
+
+In the context of the study, suppose that we want to test the hypothesis that $\beta_1= 0.7$, the above interval for $\beta_1$ suggests rejecting this hypothesis at the 5% significance level.
+
+The data is then analysed in such a way that the probability model for $T_i$ takes on a log-logistic distribution as seen below. With the same shape and scale parameters as in the Weibull model.
 
 $$ T_i \sim \mbox{log-logistic}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale} = \exp(\eta_i)),\  \ \ \ \ \  \ \  \eta_i = \beta_0 + \beta_1 x_i $$
 
 Whilst the survival function of a log-logistic distribution can be expressed as.
 
 $$ S(t|\mbox{a,b}) = \exp\bigg(- \log\bigg( 1 + \bigg(\frac{t}{b}\bigg)^a\bigg)\bigg), \  \ \ \ \ \ \ t > 0$$
-* explanation of where survival function fits into it*
+Hence, the negative log likelihood of the censored observations can be written as below.
 
-Following on from this, the Weibull distribution was again considered, but with added random effect $b$ taken into consideration. So we can now see the scale of the Weibull distribution is then altered to the exponent of $\eta_i$. Where $\eta_i$ is now as follows:
+$$ (L) _{rx=0}= - \sum \log \bigg( \exp\bigg(-\log \bigg(1 +\bigg(\frac{t_0}{\lambda}\bigg)^k\bigg) \\
+=\sum \log \bigg( 1+ \bigg(\frac{t_0}{\lambda}\bigg)^k\bigg), \ \ \ \ \ \ \ \ t_0 > 0 $$ 
+
+In equal fashion to the Weibull distribution, the collective likelihood of both censored and uncensored observations will be written as the sum of $L_{rx=0}$ and $L_{rx=1}$ as they are in terms of logs. The function that will be maximised has been defined in the $R$ code below.
+
+```{#numCode .R .numberLines}
+nll.llogistic <- function (theta) {
+  #create subsets of data since for the likelihood function 
+  #since the contribution to the likelihood varies
+  #depending on the 'status' variable
+  t0 <- rats[which(rats$status==0),,]$time
+  rx0 <- rats[which(rats$status==0),,]$rx
+  t1 <- rats[which(rats$status==1),,]$time
+  rx1 <- rats[which(rats$status==1),,]$rx
+    #compute the negative log likelihood
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1] + theta[2]*rx1) #scale for uncensored obs
+  loglik1 <- -sum(log((k/lambda)*(t1/lambda)^(k-1)/(1+(t1/lambda)^k)^2)) 
+  #log likelihood of uncensored obs
+  lambda <- exp(theta[1] + theta[2]*rx0) 
+  #redefine b for new rx vector for censored obs
+  loglik2 <- sum(log(1+(t0/lambda)^k)) 
+  #log likelihood of censored obs using S(t|a,b)
+  loglik <- loglik1 + loglik2 #joint likelihood
+  loglik
+}
+```
+
+The function, \texttt{nll.logistic} that has been defined above will be passed to \texttt{optim} using the initial vector of parameters. Again, the starting point has been estimated in the same fashion as the previous.
+
+```{#numCode .R .numberLines}
+#to pick initial point, vary paramaters of theta individually  
+#and fix the others to find a rough minimum
+
+#initialize variables
+theta <- c(0,0,0)
+beta0 <- theta[1]
+beta1 <- theta[2]
+logsig <- theta[3]
+beta0var <- 0
+beta1var <- 0
+logsigvar <- 0
+
+for (i in 0:1000) {
+  theta[1] <- 2.5 + i*0.005
+  beta0[i+1] <- theta[1]
+  beta0var[i+1] <- nll.llogistic(theta)
+}
+plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~ 5.75
+
+theta <- c(5.75,0,0)
+for (i in 0:1000) {
+  theta[2] <- -2.5 + i*0.005
+  beta1[i+1] <- theta[2]
+  beta1var[i+1] <- nll.llogistic(theta)
+}
+plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~ -0.5
+
+theta <- c(5.75,-0.5,0)
+for (i in 0:1000) {
+  theta[3] <- -2.5 + i*0.005
+  logsig[i+1] <- theta[3]
+  logsigvar[i+1] <- nll.llogistic(theta)
+}
+plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~ -0.5
+
+```
+
+The plots created by the code can be seen below.
+
+```{r,echo=FALSE,message=FALSE, fig.height=2.5}
+nll.llogistic <- function (theta) {
+  #initialise variables from dataset
+  t <- rats$time
+  s <- rats$status
+  rx <- rats$rx
+  #define shape and scale of log-logistic distribution
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1] + theta[2]*rx) #scale
+  #compute negative log likelihood
+  loglik <- -sum(log(((k/lambda)*(t/lambda)^(k-1)/(1+(t/lambda)^k)^2)^s*(1/(1+(t/lambda)^k))^(1-s)))
+  loglik
+}
+theta <- c(0,0,0)
+beta0 <- theta[1]
+beta1 <- theta[2]
+logsig <- theta[3]
+beta0var <- 0
+beta1var <- 0
+logsigvar <- 0
+
+for (i in 0:1000) {
+  theta[1] <- 2.5 + i*0.005
+  beta0[i+1] <- theta[1]
+  beta0var[i+1] <- nll.llogistic(theta)
+}
+#plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~ 5.75
+
+theta <- c(5.75,0,0)
+for (i in 0:1000) {
+  theta[2] <- -2.5 + i*0.005
+  beta1[i+1] <- theta[2]
+  beta1var[i+1] <- nll.llogistic(theta)
+}
+#plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~ -0.5
+
+theta <- c(5.75,-0.5,0)
+for (i in 0:1000) {
+  theta[3] <- -2.5 + i*0.005
+  logsig[i+1] <- theta[3]
+  logsigvar[i+1] <- nll.llogistic(theta)
+}
+#plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~ -0.5
+par(mfrow=c(1,3))
+plot(beta0, beta0var, type="l", xlab=expression(beta[0]), ylab="Variance") #estimate optimal beta0 to be ~5.75
+plot(beta1, beta1var, type="l", xlab=expression(beta[1]), ylab="Variance") #estimate optimal beta1 to be ~-0.5
+plot(logsig, logsigvar, type="l", xlab=expression(log(sigma)), ylab="Variance") #estimate optimal logsigma to be ~-0.5
+```
+The observed minima on the graphs, will again be used as to estimate the starting parameters. This appears to be approximately at $\boldsymbol{\theta} = ( 5.75, -0.5, -0.5)$. Subsequent to this, the function will be optimized with respect to the chosen initial point $\boldsymbol{\theta}$, the $R$ code written to achieve this is displayed below.  
+
+```{#numCode .R .numberLines}
+theta <- c(5.75,-0.5,-0.5)
+nll.optim <- optim(theta, nll.llogistic, hessian=TRUE, method="BFGS")
+
+```
+The objects returned by \texttt{nll.optim} can be seen as below.   
+\texttt{par}
+```{r,echo=FALSE,message=FALSE}
+nll.llogistic <- function (theta) {
+  #create subsets of data since for the likelihood function 
+  #since the contribution to the likelihood varies
+  #depending on the 'status' variable
+  t0 <- rats[which(rats$status==0),,]$time
+  rx0 <- rats[which(rats$status==0),,]$rx
+  t1 <- rats[which(rats$status==1),,]$time
+  rx1 <- rats[which(rats$status==1),,]$rx
+    #compute the negative log likelihood
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1] + theta[2]*rx1) #scale for uncensored obs
+  loglik1 <- -sum(log((k/lambda)*(t1/lambda)^(k-1)/(1+(t1/lambda)^k)^2)) 
+  #log likelihood of uncensored obs
+  lambda <- exp(theta[1] + theta[2]*rx0) 
+  #redefine b for new rx vector for censored obs
+  loglik2 <- sum(log(1+(t0/lambda)^k)) 
+  #log likelihood of censored obs using S(t|a,b)
+  loglik <- loglik1 + loglik2 #joint likelihood
+  loglik
+}
+theta <- c(5.75,-0.5,-0.5)
+nll.optim <- optim(theta, nll.llogistic, hessian=TRUE, method="BFGS")
+theta.llog <- nll.optim$par 
+theta.llog 
+```
+\texttt{value}
+```{r,echo=FALSE,message=FALSE}
+theta.llog <- nll.optim$value 
+theta.llog 
+```
+\texttt{counts}
+```{r,echo=FALSE,message=FALSE}
+theta.llog <- nll.optim$counts 
+theta.llog 
+```
+\texttt{convergence}
+```{r,echo=FALSE,message=FALSE}
+theta.llog <- nll.optim$convergence 
+theta.llog 
+```
+The returned object \texttt{nll.optim} is made up of several elements. The output \texttt{par} contains the returned optimized parameter values, $\boldsymbol{\tilde{\theta}}$ following a log-logistic distribution. The output, \texttt{value} contains the maximum likelihood estimate for the function at initial $\boldsymbol{\theta}$. It can be seen that from the \texttt{counts} output, that $35$ function evaluations and $12$ gradient evalutions were required in order to converge to the optimal solution in this case, whist \texttt{convergence} equal to $0$ confirms that the solution converged.
+
+It is now left to estimate the asymptotoic standard errors of each parameter estimate. This along with a $95$% confidence interval is estimated using $R$ code as below.
+
+```{#numCode .R .numberLines}
+#name the nll.optim hessian
+hess <- nll.optim$hessian
+#to find the standard error, take the sqrt of the diag of the inverse hessian
+se <- sqrt(diag(solve(hess)))
+#95% CI = parameter estimate +- ~1.96*stderr
+CI <- c(theta.llog[2] + qnorm(0.025)*se[2], theta.llog[2] + qnorm(0.975)*se[2])
+```
+The asymptotic standard error of each of the parameter estimates $\boldsymbol{\tilde{\theta}}$ is shown as below. 
+```{r,echo=FALSE,message=FALSE}
+se <- sqrt(diag(solve(hess)))
+se
+
+```
+
+It can be seen that the asymptotic standard error of $\beta_1$ has been approximated at a value of $17.36748$.
+
+Following on from this, the Weibull distribution was again considered, but with added random effect describing the litter, $\boldsymbol{b}$, taken into consideration. So it can be seen that the scale of the Weibull distribution is then altered to the exponent of $\eta_i$. Where $\eta_i$ is now as follows:
 $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
 
-###analysis of data 
-* Talk about weibull, loglik and weibull w random effects  
-* explain how random effects aletered the weibull distribution  
-* talk about how functions were initialised in r  
-* explain how the starting points were chosen  
-* talk about confidence intervals and how they were computed.  
 
-
-
-### Results
-
-* what came out of the analysis
-
-
-
-###conclusions and recommendations
-
-* Give the main results and conclusions.  
-* Try to report your conclusion in context of the experiment from which the data came. 
-* internal and external validity 
-* only 40 of the rats actually had cancer. bigger sample size plz.   
-* out of the 40 w tumor 21 received treatment?? lol  
-
-
-#### Internal/External Validity (within the conclusion)
-
-It can be seen from the data that for each litter, one in three of the rats were given the treatment, whilst the other two received only the control. Hence, fifty of the rats in total received treatment.
-60 of the rats died at week 104 this shows threat to external validity. y they all die???
-  
-### Appendices
-
-Maybe not??????
   
