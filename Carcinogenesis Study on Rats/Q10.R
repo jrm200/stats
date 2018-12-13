@@ -1,3 +1,4 @@
+#exactly the same as Q9, except in the definition of the log posterior function
 fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
 
 set.seed(7)
@@ -39,7 +40,7 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   if (ll.prior == -Inf) {
     ll.prior <- -1e3
   }
-  
+  #marginal of N
   I <- rep(0,26)
   for (i in 1:length(s.)){
     G <- integrate(f, lower=0, upper=s.[i], i=i, theta.Q10=theta.Q10)
