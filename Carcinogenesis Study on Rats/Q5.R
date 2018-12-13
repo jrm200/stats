@@ -1,12 +1,11 @@
 rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
-
+#we set the seed for random generators for reproducibility
 set.seed(4)
 
-#theta = [beta0, beta1, log(sigma), log(sigmab)]
 X <- model.matrix(~ rx + status, rats) #define X matrix
 rats$litter <- factor(rats$litter)
 Z <- model.matrix(~ litter - 1, rats) #define Z matrix
-b <- rnorm(50,0,0.1) #set arbitrary b
+b <- rnorm(50,0,0.1) #set arbitrary random b
 y <- rats$time #define y vector
 theta <- c(4.9831505, -0.2384417, -1.3324342, 0) #using optimal paramater estimates from Q1, & small log(sig.b)
 
@@ -20,7 +19,7 @@ log.posterior <- function (b, theta, times = y, X.mat=X, Z.mat=Z) {
 }
 
 lfyb <- function (b, y, theta, X, Z) {
-  #function to compute the joint log density of y and b, which is the
+  #function to compute the negative log joint density of y and b, which is the
   #(conditional log likelihood of y given b) + (likelihood of b)
   #first compute conditional density of y given b
   s <- X[,3] #status
@@ -31,7 +30,7 @@ lfyb <- function (b, y, theta, X, Z) {
   #log conditional likelihood of y given b
   nll1 <- k*log(lambda) - log(k) - (k-1)*log(y) + (y/lambda)^k #scale = 1
   nll0 <- (y/lambda)^k #scale = 0
-  lfy_b <- sum(s*nll1 + (1-s)*nll0)
+  lfy_b <- sum(s*nll1 + (1-s)*nll0)#chooses the normal or censored density based on s
   #negative log likelihood of b
   sig.b <- exp(theta[4])
   #lfb <- -sum(dnorm(b, 0, sig.b, log=TRUE))
@@ -60,15 +59,15 @@ MH <- function (theta, sigma.prop, n.rep) {
   for (i in 2:n.rep) {
     #update theta
     theta <- theta+rnorm(4, 0, sigma.prop)
-    lp1 = log.posterior(b, theta)
-    if (runif(1) < exp(lp1 - lp0)){
+    lp1 = log.posterior(b, theta)#evaluate log posterior
+    if (runif(1) < exp(lp1 - lp0)){#accept step with probability alpha
       accept.th <- accept.th+1
       lp0 <- lp1
     }else{
       theta <- theta.vals[i-1,]
     }
     #update random effects
-    b <- b + rnorm(50)*0.045 #tuning possible; 0.045 seems to be good
+    b <- b + rnorm(50)*0.045 #after tuning, 0.045 produces an acceptance rate around 0.23
     lp1 <- log.posterior(b, theta)
     if (runif(1) < exp(lp1 - lp0)){
       accept.b <- accept.b+1
@@ -82,15 +81,15 @@ MH <- function (theta, sigma.prop, n.rep) {
   accept.rate <- c(accept.th/n.rep, accept.b/n.rep)
   list(theta=theta.vals, accept.rate=accept.rate)
 }
-
+#initialize theta to an arbitrary value; run Metropolis Hastings
 theta0 <- c(1,0,0.1,0.2)
 mh <- MH(theta0, sigma.prop, n.rep)
 theta <- mh$theta
 accept.rate <- mh$accept.rate
-
+#we plot the autocorrelation of the variables, relation between elements of theta and the evolution of each element of theta
 par(mfrow=c(2,2),mar=c(4,4,1,1))
-acf(theta[,4], lag.max=2000) #looks like the 'stickiest' parameter is theta[4], acf = 0 after about 200 iterations, effective
-acf(theta[,3], lag.max=2000) #sample size = n.rep/200
+acf(theta[,4], lag.max=2000) #looks like the 'stickiest' parameter is theta[4], acf = 0 after about 2000 iterations
+acf(theta[,3], lag.max=2000)
 acf(theta[,2], lag.max=2000)
 acf(theta[,1], lag.max=2000)
 
