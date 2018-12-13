@@ -1,5 +1,7 @@
 fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
 
+set.seed(7)
+
 s <- fatigue$s
 N <- fatigue$N
 ro <- fatigue$ro
@@ -11,8 +13,8 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   lambda <- exp(theta[1])*(s. - gama)^theta[2] #scale
   ll0 <- sum(dweibull(N., shape=k, scale=lambda, log=TRUE)*(1-ro.))
   ll1 <- sum((-(N./lambda)^k)*ro.)
-  ll <- nll0 + nll1
-  if (ll == -Inf) {
+  ll <- ll0 + ll1
+  if (is.nan(ll) || ll == -Inf) {
     ll <- -1e3
   }
   #log density of gama
@@ -54,10 +56,10 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
     #update random effects
     b.step <- sigma.prop[6]
     b <- b + runif(26, -s., s.)*b.step #maybe tune
-    while (length(b[b<0 || b>s.]) > 0) {
-      b[b<0 || b>s.] <- b.vals[i-1,which(b<0 || b>s.)] + runif(length(b[b<0 || b>s.]), -s., s.)*b.step 
+    while (length(b[b<0 | b>s.]) > 0) {
+      b[b<0 | b>s.] <- b.vals[i-1,which(b<0 | b>s.)] + runif(length(b[b<0 | b>s.]), -s., s.)*b.step 
     }
-      
+    
     lp1 <- log.post(theta, b)
     if (runif(1) < exp(lp1 - lp0)){
       accept.b <- accept.b+1
@@ -69,12 +71,21 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
     b.vals[i,] <- b
   }
   accept.rate <- c(accept.th/n.rep, accept.b/n.rep)
-  list(theta=theta.vals, accept.rate=accept.rate)
+  list(theta=theta.vals, accept.rate=accept.rate, gama=b.vals)
 }
 
-theta <- c(0, 1, 0, 1, 1)
-sigma.prop <- c(1, 1, 1, 1, 1, 1)
+theta <- c(5, -2, 0, 4, -1.5)
+sigma.prop <- c(0.055, 0.05, 0.05, 0.05, 0.05, 0.1)
 n.rep <- 100000
 mh <- MH(theta, sigma.prop, n.rep)
 ar <- mh$accept.rate
 print(ar)
+lower <- n.rep/5+1
+
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+for (i in 1:5){
+  plot(mh$theta[lower:n.rep,i], type="l")
+}
+for (i in 1:7){
+  plot(mh$gama[lower:n.rep,3*i], type="l")
+}
