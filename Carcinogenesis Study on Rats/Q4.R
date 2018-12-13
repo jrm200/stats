@@ -41,6 +41,7 @@ nll.aux1 <- deriv(expr1, c("b.aux"), function.arg=c("b.aux", "B0", "B1", "k", "r
 expr0 <- expression((y/exp(B0 + B1*rx + b.aux))^k)
 nll.aux0 <- deriv(expr0, c("b.aux"), function.arg=c("b.aux", "B0", "B1", "k", "rx", "y"))
 
+#numerically compute the gradient of lfyb
 grad <- function (b, y, theta, X, Z) {
   #define variables
   rx <- X[,2]
