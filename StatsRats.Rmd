@@ -470,8 +470,74 @@ se
 
 It can be seen that the asymptotic standard error of $\beta_1$ has been approximated at a value of $17.36748$.
 
-Following on from this, the Weibull distribution was again considered, but with added random effect describing the litter, $\boldsymbol{b}$, taken into consideration. So it can be seen that the scale of the Weibull distribution is then altered to the exponent of $\eta_i$. Where $\eta_i$ is now as follows:
+Following this, the Weibull distribution was again considered, but with added random effect describing the litter, $\boldsymbol{b}$, taken into consideration. So it can be seen that the scale of the Weibull distribution is then altered to the exponent of $\eta_i$. Where $\eta_i$ is now as follows:
 $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
 
+Primarily, a function \texttt{lfyb} has been created, which evaluates the joint log density of the observations $\boldsymbols{y}$ and the random effect $\boldsymbol{b}$. It is also necessary to consider that the function will also be required to be suitable for optimizing. The arguments of the function will be $/boldsymbol{\theta}$, $\boldsymbol{y}$, $\boldsymbol{b}$, $X$ and $Z$. The following $R$ code is a means of constructing these arguments.
 
-  
+```{#numCode .R .numberLines}
+#theta = [beta0, beta1, log(sigma), log(sigmab)]
+X <- model.matrix(~ rx + status, rats) #define X matrix
+rats$litter <- factor(rats$litter)
+Z <- model.matrix(~ litter - 1, rats) #define Z matrix
+b <- rnorm(50,0,0.1) #set arbitrary b
+y <- rats$time #define y vector
+theta <- c(4.9831505, -0.2384417, -1.3324342, 0) #using optimal paramater estimates from Q1, & small log(sig.b)
+```
+
+These arguments are then used to construct the function. The $R$ code below displays the function.
+```{#numCode .R .numberLines}
+lfyb <- function (b, y, theta, X, Z) {
+  #function to compute the joint log density of y and b, which is the
+  #(conditional log likelihood of y given b) + (likelihood of b)
+  #first compute conditional density of y given b
+  s <- X[,3] #status
+  beta <- c(theta[1:2],0) #define beta vector with a 0 in the last position since status is not relevant for eta
+  eta <- as.numeric(X%*%beta + Z%*%b) #define eta vector
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(eta) #scale vector
+  #log conditional likelihood of y given b
+  nll1 <- k*log(lambda) - log(k) - (k-1)*log(y) + (y/lambda)^k #scale = 1
+  nll0 <- (y/lambda)^k #scale = 0
+  lfy_b <- sum(s*nll1 + (1-s)*nll0)
+  #negative log likelihood of b
+  sig.b <- exp(theta[4])
+  #lfb <- -sum(dnorm(b, 0, sig.b, log=TRUE))
+  lfb <- dnorm(b, 0, sig.b)
+  lfb <- log(lfb)
+  lfb[lfb==-Inf] <- -10
+  lfb <- -sum(lfb)
+  #compute and output negative joint log density
+  lf <- lfy_b + lfb
+  lf
+}
+
+```
+
+It then follows to optimize the function \texttt{lal} for given parameters $\boldsymbol{\theta}$. This has been done using he $R$ code below and the returned objects displayed beneath.
+
+```{#numCode .R .numberLines}
+  lal.opt <- optim(theta, lal, y=y, X=X, Z=Z, method="BFGS", hessian=TRUE)
+```
+
+```{r,echo=FALSE,message=FALSE}
+  lal.opt <- optim(theta, lal, y=y, X=X, Z=Z, method="BFGS", hessian=TRUE)
+  lal.opt
+
+```
+
+The parameter values for \texttt{lal.opt}
+
+
+As a means of estimating the relatively quality amongst the different maximum likelihood estimates, the AIC has been calculated for each of the models using the following code.
+
+```{#numCode .R .numberLines}
+##To calculate the AIC
+aic.rand <- 2*lal.opt$value + 2*length(lal.opt$par)
+aic.weibull <-2*weibull.optim$value + 2*length(weibull.optim$par)
+aic.nll <-2*nll.optim$value + 2*length(nll.optim$par)
+
+```
+
+The values for the AIC are not very dispersed so relative to one another, the models relative quality of statistical models for the given set of data \texttt{rats} are fairly equal. The lowest being the Laplaces approximation with the random effects considered at $490.7679$ , whilst the highest is the negative log likelihood model with AIC at $492.7679$. This might suggest that the Laplaces 
+
