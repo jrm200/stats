@@ -45,7 +45,7 @@ lfyb <- function (b, y, theta, X, Z) {
 }
 
 n.rep <- 100000
-sigma.prop <- c(0.2, 0.05, 0.04, 0.04) #began with 0.05, ar = 0.538. Tuned to 0.1275(ish) by varying sigma until ar ~ 0.23
+sigma.prop <- c(0.15, 0.055, 0.055, 0.1) #tuning possible; (0.15, 0.055, 0.055, 0.1) looks to be very good in terms of acceptance rate
 
 MH <- function (theta, sigma.prop, n.rep) {
   theta.vals <- matrix(0, n.rep, 4) #matrix to save generated values
@@ -68,7 +68,7 @@ MH <- function (theta, sigma.prop, n.rep) {
       theta <- theta.vals[i-1,]
     }
     #update random effects
-    b <- b + rnorm(50)*0.05 #maybe tune
+    b <- b + rnorm(50)*0.045 #tuning possible; 0.045 seems to be good
     lp1 <- log.posterior(b, theta)
     if (runif(1) < exp(lp1 - lp0)){
       accept.b <- accept.b+1
@@ -83,7 +83,7 @@ MH <- function (theta, sigma.prop, n.rep) {
   list(theta=theta.vals, accept.rate=accept.rate)
 }
 
-theta0 <- c(4,-0.5,-0.1,-0.2)
+theta0 <- c(1,0,0.1,0.2)
 mh <- MH(theta0, sigma.prop, n.rep)
 theta <- mh$theta
 accept.rate <- mh$accept.rate
