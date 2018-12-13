@@ -1,12 +1,12 @@
 fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
-
+#set seed for reproducibility
 set.seed(7)
 
 s <- fatigue$s
 N <- fatigue$N
 ro <- fatigue$ro
 gama <- runif(26, min=0.01, max=s) #define random effect, gama between 0 and the value of s which it relates to
-
+#define the log posterior distribution
 log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   #log density of N|gama
   k <- 1/exp(theta[3]) #shape
@@ -55,11 +55,12 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
     }
     #update random effects
     b.step <- sigma.prop[6]
-    b <- b + runif(26, -s., s.)*b.step #maybe tune
+    b <- b + runif(26, -s., s.)*b.step
+    #we restrict b to stay between 0 and the corresponding element in s
     while (length(b[b<0 | b>s.]) > 0) {
       b[b<0 | b>s.] <- b.vals[i-1,which(b<0 | b>s.)] + runif(length(b[b<0 | b>s.]), -s., s.)*b.step 
     }
-    
+    #we evaluate the log posterior at the new b and accept or reject the step
     lp1 <- log.post(theta, b)
     if (runif(1) < exp(lp1 - lp0)){
       accept.b <- accept.b+1
@@ -75,7 +76,7 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
 }
 
 theta <- c(5, -2, 0, 4, -1.5)
-sigma.prop <- c(0.055, 0.05, 0.05, 0.05, 0.05, 0.1)
+sigma.prop <- c(0.055, 0.05, 0.05, 0.05, 0.05, 0.1)#we achieve an optimal acceptance rate using these proposal standard deviations
 n.rep <- 100000
 mh <- MH(theta, sigma.prop, n.rep)
 ar <- mh$accept.rate
