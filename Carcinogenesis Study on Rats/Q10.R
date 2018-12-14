@@ -8,7 +8,7 @@ N <- fatigue$N
 ro <- fatigue$ro
 gama <- runif(26, min=0.01, max=s) #define random effect, gama between 0 and the value of s which it relates to
 
-f <- function (gama, i, theta.Q10) {
+f <- function (gama, i, theta.Q10=theta) {
   k <- 1/exp(theta.Q10[3]) #shape
   lambda <- exp(theta.Q10[1])*(s[i] - gama)^theta.Q10[2] #scale
   #compute the negative log likelihood
@@ -43,7 +43,7 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   #marginal of N
   I <- rep(0,26)
   for (i in 1:length(s.)){
-    G <- integrate(f, lower=0, upper=s.[i], i=i, theta.Q10=theta.Q10)
+    G <- integrate(f, lower=0, upper=s.[i], i=i)
     I[i] <- G$value
   }
   I <- sum(log(I))
@@ -96,7 +96,7 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
 
 theta <- c(5, -2, 0, 4, -1.5)
 sigma.prop <- c(0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
-n.rep <- 100000
+n.rep <- 10000
 mh <- MH(theta, sigma.prop, n.rep)
 ar <- mh$accept.rate
 print(ar)
