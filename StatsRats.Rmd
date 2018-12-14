@@ -633,7 +633,7 @@ This study has been set up as a means of predicting the fatigue, as to aid the u
 
 The fatigue characteristics are established through $26$ fatigue tests which are performed on the small flat plates of the loading materials called coupons. The following elements of the study were recorded.
 
-*   $\texttt{Cycles}$ the number of cycles, $\N_i$ until failure in coupon $i$.    
+*   $\texttt{Cycles}$ the number of cycles, $N_i$ until failure in coupon $i$.    
 *   $\texttt{Stress levels}$ the controlled levels of stress, $s_i$ have been recorded as force per unit area (in Mega Pascals, MPa).    
 
 The stress levels $s_i$ are controlled throughout the series of tests, whilst the number of cycles to failure $N_i$ exhibits a random behaviour due to inherent microstructural inhomogeneity in the material properties as well as due to uncontrolled differences in test conditions. If a test is terminated before the coupon fails, then the coupon is market as a 'runout'. In terms of likelihoods, the runouts can be interpreted as censored observations.
