@@ -1,0 +1,104 @@
+---
+title: 'MA40198: Applied Statistical Inference'
+author: 'Coursework sheet'
+header-includes:
+    - \usepackage{bm}
+date: "23/11/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 4
+Previously, we assumed the fatigue limit of all the coupons to be the same. We can modify our model to assume that the fatigue limit of the coupons are different by introducing random effects for each of the coupons. Let the set of random effects be $\Gamma$. We require that all $\gamma_i< s_i$. The probability density function of each $\Gamma_i$ is $\mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma_\gamma}, \mbox{scale}=\exp(\mu_\gamma))$. The conditional probability of the number of cycles to failure given the fatigue limit of a coupon is  $N_i|\Gamma_i=\gamma_i<s_i\sim\mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale} = \alpha(s_i-\gamma_i)^\delta)$ If we let $\boldsymbol{b}$ be the vector of random effects we can define the vector of unknown parameters as $\boldsymbol{\theta}^T=(log(\alpha), \delta, log(\sigma), \mu_\gamma, log(\sigma_\gamma))$. To implement a Metropolis Hastings algorithm, we assume uniform improper prior distributions for all the parameters except for $\sigma_\gamma$, which has an exponential prior distribution with rate 5. We also assume that the parameters are independent of each other. We can then make use of the same algorithm as in Part 1 question 5 to simulate from the posterior of $\boldsymbol{\theta}$. The log posterior is as follows
+
+```{r, echo=FALSE, message=FALSE}
+log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
+  #log density of N|gama
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s. - gama)^theta[2] #scale
+  ll0 <- sum(dweibull(N., shape=k, scale=lambda, log=TRUE)*(1-ro.))
+  ll1 <- sum((-(N./lambda)^k)*ro.)
+  ll <- ll0 + ll1
+  if (is.nan(ll) || ll == -Inf) {
+    ll <- -1e3
+  }
+  #log density of gama
+  ll.gama <- sum(dweibull(gama, shape = 1/exp(theta[5]), scale = exp(theta[4]), log=TRUE))
+  if (is.nan(ll.gama) || ll.gama == -Inf) {
+    ll.gama <- -1e3
+  }
+  #log density of prior of sig.gama
+  ll.prior <- dexp(exp(theta[5]), rate=5, log=TRUE)
+  if (ll.prior == -Inf) {
+    ll.prior <- -1e3
+  }
+  #sum of log densities
+  lp <- ll + ll.gama + ll.prior
+  lp
+}
+```
+
+We use the log posterior to decide whether a proposed step should be accepted or not inside the Metropolis Hastings algorithm. We then implement the algorithm in an $R$ function as below.
+
+```{r, echo=FALSE, message=FALSE}
+MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
+  theta.vals <- matrix(0, n.rep, 5) #matrix to save generated values
+  theta.vals[1,] <- theta
+  b <- runif(26, min=0.01, max=s.)
+  b.vals <- matrix(0, n.rep, 26)
+  b.vals[1,] <- b
+  lp0 <- log.post(theta.vals[1,], b)
+  accept.th <- 0
+  accept.b <- 0
+  
+  for (i in 2:n.rep) {
+    #update theta
+    theta <- theta + rnorm(5, 0, sigma.prop[1:5])
+    lp1 <- log.post(theta, b)
+    if (runif(1) < exp(lp1 - lp0)){
+      accept.th <- accept.th+1
+      lp0 <- lp1
+    }else{
+      theta <- theta.vals[i-1,]
+    }
+    #update random effects
+    b.step <- sigma.prop[6]
+    b <- b + runif(26, -s., s.)*b.step
+    #we restrict b to stay between 0 and the corresponding element in s
+    while (length(b[b<0 | b>s.]) > 0) {
+      b[b<0 | b>s.] <- b.vals[i-1,which(b<0 | b>s.)] + runif(length(b[b<0 | b>s.]), -s., s.)*b.step 
+    }
+    #we evaluate the log posterior at the new b and accept or reject the step
+    lp1 <- log.post(theta, b)
+    if (runif(1) < exp(lp1 - lp0)){
+      accept.b <- accept.b+1
+      lp0 <- lp1
+    }else{
+      b <- b.vals[i-1,]
+    }
+    theta.vals[i,] <- theta
+    b.vals[i,] <- b
+  }
+  accept.rate <- c(accept.th/n.rep, accept.b/n.rep)
+  list(theta=theta.vals, accept.rate=accept.rate, gama=b.vals)
+}
+```
+
+This returns every $\theta$ and random effect $\Gamma$ visited as well as the acceptance rate for steps in the algorithm. To call the function we load the data, fix an initial guess for $\theta$, the number of repetitions and the spread of the proposed steps. An example is below.
+
+```{r, echo=FALSE, message=FALSE}
+fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
+#set seed for reproducibility
+set.seed(7)
+s <- fatigue$s
+N <- fatigue$N
+ro <- fatigue$ro
+theta <- c(5, -2, 0, 4, -1.5)
+sigma.prop <- c(0.055, 0.05, 0.05, 0.05, 0.05, 0.1)#we achieve an optimal acceptance rate using these proposal standard deviations
+n.rep <- 100000
+mh <- MH(theta, sigma.prop, n.rep)
+```
+
