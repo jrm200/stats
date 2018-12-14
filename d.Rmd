@@ -118,11 +118,68 @@ The stress levels $s_i$ are controlled throughout the series of tests, whilst th
 
 The number of cycles has been modelled using the following probability model.
 
-$$ N_i = \alpha (s_i - \gamma)^{delta} \epsilon_i, \ \ \ \ \ \ \ \textrm{where} \ \ s_i > \gamma $$
+$$ N_i = \alpha (s_i - \gamma)^{\delta} \epsilon_i, \ \ \ \ \ \ \ \textrm{where} \ \ s_i > \gamma $$
 
 and $\epsilon_i$ is a random error such that,
 
 $$ \epsilon_i \sim \textrm{Weibull}(\textrm{shape}= 1/ \sigma, \ \textrm{scale}=1) $$
 The constants $\alpha > 0$, $\delta \in \mathbb{R}$, $\delta > 0 $ and $\sigma > 0 $ are unknown parameters. Empirical results suggest coupons tested below the stress level $\gamma$ will never fail. The unknown parameter $\gamma$ is therefore called the \textbf{fatigue limit}.
 
-Primarily, 
+Primarily, $\gamma$ was taken to be $50$ so that the runouts will be ommitted. The maximum likelihood estimate of $\boldsymbol{\theta}= (\log(\alpha), \delta, \log(\sigma))^T$, was found using \texttt{optim}. The $R$ code constructed to compute this is displayed.
+
+```{r}
+fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
+#need to show the Ni is a weibull dist with shape epsilon and scale alpha(s-gama)^delta,
+#then can compute likelihood as in Q1.
+#Question 2.1
+gama <- 50 #arbitrary gamma
+theta <- c(1,1,1) #arbitrary initial theta
+s <- fatigue$s #stress
+N <- fatigue$N
+
+nll.weibull <- function (theta, gama, s, N) {
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s - gama)^theta[2] #scale
+  ro <- fatigue$ro
+  #compute the negative log likelihood
+  nll0 <- -sum(dweibull(N, shape=k, scale=lambda, log=TRUE)^(1-ro))
+  nll1 <- sum(((N/lambda)^k)^ro)
+  nll <- nll0 + nll1
+  nll
+}
+maxlik <- optim(theta, nll.weibull, gama=gama, s=s, N=N, method="BFGS", hessian=TRUE)
+```
+
+The returned objects can be seen below.
+
+```{r, echo=FALSE, message=FALSE}
+maxlik
+```
+
+The optimised vector of parameters $\boldsymbol{\hat{\theta}}= (13.5727280, -1.0460720, -0.5109903)$. The asymptotic $95\%$ confidence intervals of the parameters are displayed in columns $1$, $2$ and $3$ respectively below.
+
+```{r,echo=FALSE, message=FALSE}
+se <- sqrt(diag(solve(maxlik$hessian)))
+CI <- matrix(c(CI1,CI2,CI3), ncol=3, nrow=2)
+CI
+```
+
+The
+
+```{r}
+#How variations in gama affects the theta
+f.vals <- rep(0,80)
+f.par <- matrix(0,nrow=3, ncol=80)
+for (i in 1:80) {
+  gama <- i
+  f.vals[i] <- nll.weibull(theta, gama, s, N)
+  maxlik <- optim(theta, nll.weibull, gama=gama, s=s, N=N, hessian=TRUE)
+  f.par[,i] <- maxlik$par
+}
+
+gama <- seq(from=1,to=80)
+plot(gama, f.par[1,])
+plot(gama, f.par[2,])
+plot(gama, f.par[3,])
+```
+
