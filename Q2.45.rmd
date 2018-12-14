@@ -107,23 +107,18 @@ Given the actual marginal density of each $n_i$, we can redefine our log posteri
 $$f(n_i)=\int_{0}^{s_i}f(n_i|\gamma_i)f(\gamma_i)d\gamma_i$$
 Then the marginal of N is the product of all $f(n_i)$ since the failure times are assumed to be independent. To implement this in $R$, we define the function to be integrated for each i as below
 ```{r}
-f <- function (gama, i, theta.Q10) {
-  k <- 1/exp(theta.Q10[3]) #shape
-  lambda <- exp(theta.Q10[1])*(s[i] - gama)^theta.Q10[2] #scale
-  #compute the negative log likelihood
-  ll0 <- dweibull(N[i], shape=k, scale=lambda) #f(n|gama)
-  ll1 <- exp(-(N[i]/lambda)^k)
-  ll <- ll0^(1-ro[i])*ll1^ro[i]
-  ll.gama <- dweibull(gama, shape=1/exp(theta.Q10[5]), scale=exp(theta.Q10[4]))
-  int <- ll*ll.gama
-  int
+f <- function (g, i, theta) {
+  fng <- dweibull(N[i], shape = 1/exp(theta[3]), scale = exp(theta[1])*(s[i]-g)^theta[2])
+  fg <- dweibull(g, shape = 1/exp(theta[5]), scale = exp(theta[4]))
+  f <- fng+fg
+  f
 }
 ```
 Since we need the natural logarithm of the product of these integrals, we can define a loop to compute the integral for each i, and sum up the logarithms as in the code below
 ```{r}
 I <- rep(0,26)
 for (i in 1:length(s.)){
-  G <- integrate(f, lower=0, upper=s.[i], i=i, theta.Q10=theta.Q10)
+  G <- integrate(f, lower=0, upper=s.[i], i=i, theta=theta)
   I[i] <- G$value
 }
 I <- sum(log(I))
@@ -153,7 +148,7 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   #marginal of N
   I <- rep(0,26)
   for (i in 1:length(s.)){
-    G <- integrate(f, lower=0, upper=s.[i], i=i, theta.Q10=theta.Q10)
+    G <- integrate(f, lower=0, upper=s.[i], i=i, theta=theta)
     I[i] <- G$value
   }
   I <- sum(log(I))
@@ -164,4 +159,4 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
 ```
 Since the rest of the model is unchanged, we can use the rest of the implementation of the Metropolis Hastings algorithm as before.
 
-When we run both programs, we see that the value of the parameters is the same for both methods, as expected. However, when using the marginal density of each $n_i$, the random walk discovers the domain more thoroughly, meaning we have a better chance of finding the true minimum and therefpre the optimal set of parameters $\theta$. 
+When we run both programs, we see that the value of the parameters is in the same range for both methods, as expected. However, when using the marginal density of each $n_i$, the random walk seems to be more sticky, meaning the autocorrelation of the parameters is quite high, which necessitates a larger sample size to obtain good results. In addition, the parameters in $\theta$ seem more correlated than they were without using the marginal likelihood in the posterior density.
