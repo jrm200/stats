@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Question 4
 Previously, we assumed the fatigue limit of all the coupons to be the same. We can modify our model to assume that the fatigue limit of the coupons are different by introducing random effects for each of the coupons. Let the set of random effects be $\Gamma$. We require that all $\gamma_i< s_i$. The probability density function of each $\Gamma_i$ is $\mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma_\gamma}, \mbox{scale}=\exp(\mu_\gamma))$. The conditional probability of the number of cycles to failure given the fatigue limit of a coupon is  $N_i|\Gamma_i=\gamma_i<s_i\sim\mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale} = \alpha(s_i-\gamma_i)^\delta)$ If we let $\boldsymbol{b}$ be the vector of random effects we can define the vector of unknown parameters as $\boldsymbol{\theta}^T=(log(\alpha), \delta, log(\sigma), \mu_\gamma, log(\sigma_\gamma))$. To implement a Metropolis Hastings algorithm, we assume uniform improper prior distributions for all the parameters except for $\sigma_\gamma$, which has an exponential prior distribution with rate 5. We also assume that the parameters are independent of each other. We can then make use of the same algorithm as in Part 1 question 5 to simulate from the posterior of $\boldsymbol{\theta}$. The log posterior is as follows
 
-```{r, echo=FALSE, message=FALSE}
+```{r}
 log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   #log density of N|gama
   k <- 1/exp(theta[3]) #shape
@@ -43,7 +43,7 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
 
 We use the log posterior to decide whether a proposed step should be accepted or not inside the Metropolis Hastings algorithm. We then implement the algorithm in an $R$ function as below.
 
-```{r, echo=FALSE, message=FALSE}
+```{r}
 MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
   theta.vals <- matrix(0, n.rep, 5) #matrix to save generated values
   theta.vals[1,] <- theta
@@ -67,7 +67,7 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
     #update random effects
     b.step <- sigma.prop[6]
     b <- b + runif(26, -s., s.)*b.step
-    #we restrict b to stay between 0 and the corresponding element in s
+    #we restrict b to staying between 0 and the corresponding element in s
     while (length(b[b<0 | b>s.]) > 0) {
       b[b<0 | b>s.] <- b.vals[i-1,which(b<0 | b>s.)] + runif(length(b[b<0 | b>s.]), -s., s.)*b.step 
     }
@@ -89,7 +89,7 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
 
 This returns every $\theta$ and random effect $\Gamma$ visited as well as the acceptance rate for steps in the algorithm. To call the function we load the data, fix an initial guess for $\theta$, the number of repetitions and the spread of the proposed steps. An example is below.
 
-```{r, echo=FALSE, message=FALSE}
+```{r}
 fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
 #set seed for reproducibility
 set.seed(7)
@@ -102,3 +102,66 @@ n.rep <- 100000
 mh <- MH(theta, sigma.prop, n.rep)
 ```
 
+## Question 5
+Given the actual marginal density of each $n_i$, we can redefine our log posterior function to include the marginal of N. The marginal of $n_i$ is
+$$f(n_i)=\int_{0}^{s_i}f(n_i|\gamma_i)f(\gamma_i)d\gamma_i$$
+Then the marginal of N is the product of all $f(n_i)$ since the failure times are assumed to be independent. To implement this in $R$, we define the function to be integrated for each i as below
+```{r}
+f <- function (gama, i, theta.Q10) {
+  k <- 1/exp(theta.Q10[3]) #shape
+  lambda <- exp(theta.Q10[1])*(s[i] - gama)^theta.Q10[2] #scale
+  #compute the negative log likelihood
+  ll0 <- dweibull(N[i], shape=k, scale=lambda) #f(n|gama)
+  ll1 <- exp(-(N[i]/lambda)^k)
+  ll <- ll0^(1-ro[i])*ll1^ro[i]
+  ll.gama <- dweibull(gama, shape=1/exp(theta.Q10[5]), scale=exp(theta.Q10[4]))
+  int <- ll*ll.gama
+  int
+}
+```
+Since we need the natural logarithm of the product of these integrals, we can define a loop to compute the integral for each i, and sum up the logarithms as in the code below
+```{r}
+I <- rep(0,26)
+for (i in 1:length(s.)){
+  G <- integrate(f, lower=0, upper=s.[i], i=i, theta.Q10=theta.Q10)
+  I[i] <- G$value
+}
+I <- sum(log(I))
+```
+This loop can be used in the log posterior function. The following is the same as in the previous part except for the addition of the term defined by the integral. Since the marginal is the denominator in the expression for the posterior distribution, the value stored in the variable I has to be subtracted in the function.
+```{r}
+log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
+  #log density of N|gama
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s. - gama)^theta[2] #scale
+  ll0 <- sum(dweibull(N., shape=k, scale=lambda, log=TRUE)*(1-ro.))
+  ll1 <- sum((-(N./lambda)^k)*ro.)
+  ll <- ll0 + ll1
+  if (is.nan(ll) || ll == -Inf) {
+    ll <- -1e3
+  }
+  #log density of gama
+  ll.gama <- sum(dweibull(gama, shape = 1/exp(theta[5]), scale = exp(theta[4]), log=TRUE))
+  if (is.nan(ll.gama) || ll.gama == -Inf) {
+    ll.gama <- -1e3
+  }
+  #log density of prior of sig.gama
+  ll.prior <- dexp(exp(theta[5]), rate=5, log=TRUE)
+  if (ll.prior == -Inf) {
+    ll.prior <- -1e3
+  }
+  #marginal of N
+  I <- rep(0,26)
+  for (i in 1:length(s.)){
+    G <- integrate(f, lower=0, upper=s.[i], i=i, theta.Q10=theta.Q10)
+    I[i] <- G$value
+  }
+  I <- sum(log(I))
+  #sum of log densities
+  lp <- ll + ll.gama + ll.prior - I
+  lp
+}
+```
+Since the rest of the model is unchanged, we can use the rest of the implementation of the Metropolis Hastings algorithm as before.
+
+When we run both programs, we see that the value of the parameters is the same for both methods, as expected. However, when using the marginal density of each $n_i$, the random walk discovers the domain more thoroughly, meaning we have a better chance of finding the true minimum and therefpre the optimal set of parameters $\theta$. 
