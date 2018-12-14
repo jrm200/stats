@@ -1,0 +1,128 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The defined parameters are passed as arguments to the log posterior function below. $\log(\sigma_b)$ follows an exponential prior distribution with rate $5$ and the remaining parameters have uniform prior distributions. The function \texttt{lfyb} that was previously computed has been made positive and added to the prior for $\log(\sigma_b)$.
+
+```{r}
+log.posterior <- function (b, theta, times = y, X.mat=X, Z.mat=Z) {
+  #log likelihood
+  prior <- dexp(x=exp(theta[4]), rate=5, log=TRUE) #define log(sigb) to follow a exponentional prior distn with rate 5
+  prior[prior==-Inf] <- -10
+  l.lik <- -lfyb(b, times, theta, X.mat, Z.mat) + prior #add the absolute values of the log likelihood together
+  l.lik
+}
+```
+
+The metropolis Hastings algorithm is implemented with the code below. The proposal distributions used
+
+```{r}
+n.rep <- 100000
+sigma.prop <- c(0.15, 0.055, 0.055, 0.1) #tuning possible; (0.15, 0.055, 0.055, 0.1) 
+#looks to be very good in terms of acceptance rate
+
+MH <- function (theta, sigma.prop, n.rep) {
+  theta.vals <- matrix(0, n.rep, 4) #matrix to save generated values
+  theta.vals[1,] <- theta
+  b <- rep(0, 50)
+  b.vals <- matrix(0, n.rep, 50)
+  b.vals[1,] <- b
+  lp0 <- log.posterior(b, theta.vals[1,])
+  accept.th <- 0
+  accept.b <- 0
+
+  for (i in 2:n.rep) {
+    #update theta
+    theta <- theta+rnorm(4, 0, sigma.prop)
+    lp1 = log.posterior(b, theta)#evaluate log posterior
+    if (runif(1) < exp(lp1 - lp0)){#accept step with probability alpha
+      accept.th <- accept.th+1
+      lp0 <- lp1
+    }else{
+      theta <- theta.vals[i-1,]
+    }
+    #update random effects
+    b <- b + rnorm(50)*0.045 #after tuning, 0.045 produces an acceptance rate around 0.23
+    lp1 <- log.posterior(b, theta)
+    if (runif(1) < exp(lp1 - lp0)){
+      accept.b <- accept.b+1
+      lp0 <- lp1
+    }else{
+      b <- b.vals[i-1,]
+    }
+    theta.vals[i,] <- theta
+    b.vals[i,] <- b
+  }
+  accept.rate <- c(accept.th/n.rep, accept.b/n.rep)
+  list(theta=theta.vals, accept.rate=accept.rate)
+}
+```
+
+```{r}
+#initialize theta to an arbitrary value; run Metropolis Hastings
+theta0 <- c(1,0,0.1,0.2)
+mh <- MH(theta0, sigma.prop, n.rep)
+theta <- mh$theta
+accept.rate <- mh$accept.rate
+```
+Plots below.
+```{r, echo=FALSE, include=FALSE, fig.height=2.5}
+#we plot the autocorrelation of the variables, relation between elements of theta and the evolution of each element of theta
+par(mfrow=c(2,2),mar=c(4,4,1,1))
+acf(theta[,4], lag.max=2000) #looks like the 'stickiest' parameter is theta[4], acf = 0 after about 2000 iterations
+acf(theta[,3], lag.max=2000)
+acf(theta[,2], lag.max=2000)
+acf(theta[,1], lag.max=2000)
+
+lower <- n.rep/5 + 1
+theta <- theta[lower:n.rep,]
+
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+plot(theta[,1],theta[,2],xlab="B0",ylab="B1",pch=20,cex=1)
+plot(theta[,1],theta[,3],xlab="B0",ylab="log(sig)",pch=20,cex=1)
+plot(theta[,1],theta[,4],xlab="B0",ylab="log(sig.b)",pch=20,cex=1)
+plot(theta[,2],theta[,3],xlab="B1",ylab="log(sig)",pch=20,cex=1)
+plot(theta[,2],theta[,4],xlab="B1",ylab="log(sig.b)",pch=20,cex=1)
+plot(theta[,3],theta[,4],xlab="log(sig)",ylab="log(sig.b)",pch=20,cex=1)
+
+par(mfrow=c(2,2),mar=c(4,4,1,1))
+for (i in 1:4){
+  plot(theta[,i])
+}
+```
+Need to talk about the plots. 
+
+## Fatigue of materials
+
+### Absract
+
+A number of fatigue tests have been carried out on materials which are subject to cyclic loading. 
+
+This study has been set up as a means of predicting the fatigue, as to aid the use of fatigue materials within the practice of mechanical and structural engineering. 
+
+### Introduction
+
+The fatigue characteristics are established through these fatigue tests which are performed on the small flat plates of the loading materials called coupons. The following elements of the study were recorded.
+
+*   $\texttt{Cycles}$ the number of cycles, $\N_i$ until failure in coupon $i$.    
+*   $\texttt{Stress levels}$ the controlled levels of stress, $s_i$ have been recorded as force per unit area (in Mega Pascals, MPa).    
+
+The stress levels $s_i$ are controlled throughout the series of tests, whilst the number of cycles to failure $N_i$ exhibits a random behaviour due to inherent microstructural inhomogeneity in the material properties as well as due to uncontrolled differences in test conditions. If a test is terminated before the coupon fails, then the coupon is market as a 'runout'. In terms of likelihoods, the runouts can be interpreted as censored observations.
+
+### Methods
+
+The number of cycles has been modelled using the following probability model.
+
+$$ N_i = \alpha (s_i - \gamma)^{delta} \epsilon_i, \ \ \ \ \ \ \ \textrm{where} \ \ s_i > \gamma $$
+
+and $\epsilon_i$ is a random error such that,
+
+$$ \epsilon_i \sim \textrm{Weibull}(\textrm{shape}= 1/ \sigma, \ \textrm{scale}=1) $$
+The constants $\alpha > 0$, $\delta \in \mathbb{R}$, $\delta > 0 $ and $\sigma > 0 $ are unknown parameters. Empirical results suggest coupons tested below the stress level $\gamma$ will never fail. The unknown parameter $\gamma$ is therefore called the \textbf{fatigue limit}.
+
+Primarily, 
