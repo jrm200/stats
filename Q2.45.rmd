@@ -101,6 +101,16 @@ sigma.prop <- c(0.055, 0.05, 0.05, 0.05, 0.05, 0.1)#we achieve an optimal accept
 n.rep <- 100000
 mh <- MH(theta, sigma.prop, n.rep)
 ```
+We can graph the random walk taken by the parameters $\theta$ using the following code
+
+```{r}
+lower <- n.rep/5+1
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+for (i in 1:5){
+  plot(mh$theta[lower:n.rep,i], type="l")
+}
+```
+Note that we have discarded the first 20% of the steps to allow for the distribution to reach its steady state.
 
 ## Question 5
 Given the actual marginal density of each $n_i$, we can redefine our log posterior function to include the marginal of N. The marginal of $n_i$ is
@@ -159,4 +169,17 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
 ```
 Since the rest of the model is unchanged, we can use the rest of the implementation of the Metropolis Hastings algorithm as before.
 
-When we run both programs, we see that the value of the parameters is in the same range for both methods, as expected. However, when using the marginal density of each $n_i$, the random walk seems to be more sticky, meaning the autocorrelation of the parameters is quite high, which necessitates a larger sample size to obtain good results. In addition, the parameters in $\theta$ seem more correlated than they were without using the marginal likelihood in the posterior density.
+When we run both programs, we see that the value of the parameters is in the same range for both methods, as expected. However, when using the marginal density of each $n_i$, the random walk seems to be more sticky, meaning the autocorrelation of the parameters is quite high, which necessitates a larger sample size to obtain good results. This can become a problem especially since the $R$ function \texttt{integrate} takes a long time to run. In addition, the parameters in $\theta$ seem more correlated than they were without using the marginal likelihood in the posterior density. Plots of the random walk are below (again discarding the first 20% of the random walk)
+
+```{r}
+theta <- c(5, -2, 1, 4, -1.5)
+sigma.prop <- c(0.11, 0.11, 0.11, 0.11, 0.11, 0.11)
+n.rep <- 10000
+mh <- MH(theta, sigma.prop, n.rep)
+lower <- n.rep/5+1
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+for (i in 1:5){
+  plot(mh$theta[lower:n.rep,i], type="l")
+}
+```
+
