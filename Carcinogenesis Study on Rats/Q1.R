@@ -34,25 +34,25 @@ for (i in 0:1000) {
 
 plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~5.75
 
-theta <- c(0,0,0)
+theta <- c(5.75,0,0)
 for (i in 0:1000) {
-  theta[2] <- 4 + i*0.0025
+  theta[2] <- -1.5 + i*0.0025
   beta1[i+1] <- theta[2]
   beta1var[i+1] <- nll.weibull(theta)
 }
 
-plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~5.25
+plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~ -0.4
 
-theta <- c(0,0,0)
+theta <- c(5.75,-0.4,0)
 for (i in 0:1000) {
-  theta[3] <- 1.5 + i*0.005
+  theta[3] <- -2.5 + i*0.005
   logsig[i+1] <- theta[3]
   logsigvar[i+1] <- nll.weibull(theta)
 }
 
-plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~2.75
+plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~ -0.5
 
-theta <- c(5.75,5.25,2.75)
+theta <- c(5.75,-0.4,-0.5)
 weibull.optim <- optim(theta, nll.weibull, method="BFGS", hessian=TRUE)
 theta.weibull <- weibull.optim$par
 hess <- solve(weibull.optim$hessian)
