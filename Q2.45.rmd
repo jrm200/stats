@@ -120,15 +120,15 @@ Then the marginal of N is the product of all $f(n_i)$ since the failure times ar
 f <- function (g, i, theta) {
   fng <- dweibull(N[i], shape = 1/exp(theta[3]), scale = exp(theta[1])*(s[i]-g)^theta[2])
   fg <- dweibull(g, shape = 1/exp(theta[5]), scale = exp(theta[4]))
-  f <- fng+fg
+  f <- fng*fg
   f
 }
 ```
 Since we need the natural logarithm of the product of these integrals, we can define a loop to compute the integral for each i, and sum up the logarithms as in the code below
 ```{r}
 I <- rep(0,26)
-for (i in 1:length(s.)){
-  G <- integrate(f, lower=0, upper=s.[i], i=i, theta=theta)
+for (i in 1:length(s)){
+  G <- integrate(f, lower=0, upper=s[i], i=i, theta=theta)
   I[i] <- G$value
 }
 I <- sum(log(I))
