@@ -107,7 +107,7 @@ This study has been set up as a means of predicting the fatigue, as to aid the u
 
 ### Introduction
 
-The fatigue characteristics are established through these fatigue tests which are performed on the small flat plates of the loading materials called coupons. The following elements of the study were recorded.
+The fatigue characteristics are established through $26$ fatigue tests which are performed on the small flat plates of the loading materials called coupons. The following elements of the study were recorded.
 
 *   $\texttt{Cycles}$ the number of cycles, $\N_i$ until failure in coupon $i$.    
 *   $\texttt{Stress levels}$ the controlled levels of stress, $s_i$ have been recorded as force per unit area (in Mega Pascals, MPa).    
@@ -164,7 +164,7 @@ CI <- matrix(c(CI1,CI2,CI3), ncol=3, nrow=2)
 CI
 ```
 
-The
+$\gamma$ was then varied in order to identify the impact it has on the sensitivity of the results. The code that has been displayed below and following this, plots were made in orer to observe the trend.
 
 ```{r}
 #How variations in gama affects the theta
@@ -177,9 +177,83 @@ for (i in 1:80) {
   f.par[,i] <- maxlik$par
 }
 
-gama <- seq(from=1,to=80)
-plot(gama, f.par[1,])
-plot(gama, f.par[2,])
-plot(gama, f.par[3,])
 ```
+
+```{r, echo=FALSE, message=FALSE, fig.height=3} 
+par(mfrow=c(1,3))
+gama <- seq(from=1,to=80)
+plot(gama, f.par[1,], ylab="log(alpha)", xlab="gamma")
+plot(gama, f.par[2,], ylab="delta", xlab="gamma")
+plot(gama, f.par[3,], ylab="log(sigma)", xlab="gamma")
+```
+
+There seems to be a downward linear trend amongst $\log(\alpha)$ and $\gamma$. As the values for $\gamma$  increase from $0$ to $80$, $\log(\alpha)$ decreases from around $40$ for $\gamma=0$. There is an apparent upward linear trend amongst $\delta$ for increasing $\gamma$. It varies from around $-6$ to around $-1$. As $\gamma$ increases, $\delta$ appears to relatively steadily decline from around $-0.8$ to $-0.9$ and then randomly seems to increase exponentially. It appears that changes in $\gamma$ impact $\delta$ quite substantially. This parameter is sensitive to change in $\gamma$.
+
+$\gamma$ has been estimated amongst the vector of unknowns $\boldsymbol{\theta}_* = (\log(\alpha), \delta, \log(\sigma), \gamma)$. This has been executed using the $R$ code below.
+
+```{r}
+#Q7 we can estimate gama by including it within theta and passing it to optim
+#redefine nll.weibull with theta[4] = gama
+gama <- 50 #reset gama
+theta.opt <- c(theta.opt, gama)
+
+nll.weibull2 <- function (theta, s, N) {
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s - theta[4])^theta[2] #scale
+  ro <- fatigue$ro
+  #compute the negative log likelihood
+  nll0 <- -sum(dweibull(N, shape=k, scale=lambda, log=TRUE)^(1-ro))
+  nll1 <- sum(((N/lambda)^k)^ro)
+  nll <- nll0 + nll1
+  nll
+}
+
+maxlik2 <- optim(theta.opt, nll.weibull2, s=s, N=N, hessian=TRUE)
+theta.opt2 <- maxlik2$par
+gama.opt <- theta.opt2[4] #gama looks like it should be around 66
+```
+It has been done in such a way that $\gamma$ has been passed to the vector of parameters which are modelled using a Weibull distribution. The new vector of parameters $\boldsymbol{\theta}_*$ which ultimately will be passed to \texttt{optim} to compute the MLE. The estimates of the new vector of parameters is displayed below.
+
+```{r, echo=FALSE, message=FALSE}
+theta.opt2 <- maxlik2$par
+theta.opt2
+```
+Hence, with $\gamma$ as an added parameter it has been estimated to be around 66.
+
+We proceed to focus on the lower quantiles of the fatigue as a function of stress as this is an area of great interest within engineering. The lower $10\%$ quantile of $N$ is considered using the following probability model.
+
+$$N_{0.1} = \alpha (s_i - \gamma)^{\delta}z^\sigma_{0.1}   $$
+Where $z_{0.1}$ is the lower quantile of a Weibull distribution with unit shape and scale. This will be such that it is am exponential distribution with unit rate. The following $R$ code displays the construction of the $10\%$ quantile. 
+```{r}
+#function to compute quantile of N
+N.quantile <- function (theta, s, quantile) {
+  ZQ <- qweibull(quantile, shape=1, scale=1)
+  NQ <- exp(theta[1])*(s-theta[4])^theta[2]
+  Q <- NQ*ZQ^exp(theta[3])
+  Q
+}
+
+plot(s, log(N))
+S <- seq(from=min(s), to=max(s), by=0.1)
+N.lower.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.1)
+lines(s, log(N.lower.quantile), col="red")
+N.middle.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.5)
+lines(s, log(N.middle.quantile), col="green")
+```
+
+The plot below displays the log transformed data points along with interpolated $10\%$ and $\50%$ quantiles of $N$.
+
+```{r, echo=FALSE, message=FALSE, fig.height=3}
+par(mfrow=c(1,1))
+plot(s, log(N))
+S <- seq(from=min(s), to=max(s), by=0.1)
+N.lower.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.1)
+lines(s, log(N.lower.quantile), col="red")
+N.middle.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.5)
+lines(s, log(N.middle.quantile), col="green")
+
+```
+
+It can be seen that the estimated MLE parameters calculated fits the observed data quite well, however there are some obvious outliers that fall below the $10\%$ quantile of the curve.
+
 
