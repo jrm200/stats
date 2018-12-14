@@ -3,6 +3,7 @@ title: "MA40198: Applied Statistical Inference"
 author: "Candidates: 07604, 07614, 07615"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: pdf_document
+latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -11,21 +12,30 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Carcinogenesis Study on Rats
 
+### Abstract
+
+This study seeks to comment on the effectiveness of a carcinopreventive drug following a trial on fifty litters of female rats. Observations were made on how many weeks had passed until a tumour presented in the rats which received treatment as well as a control group which received a placebo.
+
+Under the conditions of this study, there is evidence that the preventative drug had the opposite of the desired effect, causing tumours to present sooner than they otherwise would have.
+
 ### Introduction
 
 The recorded data includes the variables:
-* \texttt{litter} comprised of three rats pertaining to fifty different litters, 
-* \texttt{rx} when $rx=1$ indicates the treatment was carried out on the rat and where $rx=0$ indicates the rat received the control/placebo only,
-* \texttt{time} the follow up time, in weeks, to the appearance of a tumor,
-* \texttt{status} status$=1$ describes that the presence of a tumor and status$=0$ implies the rat died before the presence of a tumor.
 
-The drug trial was carried out on solely female rats in a controlled environment and saw one in three of the rats per litter being treated for cancer whilst the other two received a placebo treatment only. Following the treatment, the rats were detained and observed. If a tumor appeared on a rat or if the rat died, the occurance was recorded at the specific time in weeks, indicating which of the two outcomes occurred. This drug trial was carried out with the motivation to discover whether or not the method of cancer treatment prolonged the life of those that were treated.
+* \texttt{litter}, an indicator as to which litter the rat belonged to. Fifty litters were observed, with three rats per litter.  
+* \texttt{rx}, an indicator as to whether treatment was carried out on the rat ($\texttt{rx}=1$). $\texttt{rx}=0$ indicates the rat received the control/placebo only.  
+* \texttt{time}, the follow up time in weeks until the appearance of a tumour.  
+* \texttt{status}, a measure by which to censor the data. $\texttt{status}=1$ indicates the presence of a tumor and $\texttt{status}=0$ indicates that the data was censored due to the death of the rat before the presence of a tumor.    
 
-Using Maximum Likelihood Estimation, this study is comprised of frequentist estimation procedures and Bayesian estimation procedures.
+The drug trial was carried out solely on female rats in a controlled environment.  One in three of the rats per litter was treated for cancer whilst the other two received a placebo treatment only. Following the treatment, the rats were detained and observed. The time recorded relates to the number of weeks until tumour appearance, or the death of the rat, whichever occured first. This drug trial was carried out with the motivation to discover whether or not the method of cancer treatment was effective in delaying the appearance of cancer in those that are treated.
+
+Using Maximum Likelihood Estimation, this study is comprised of frequentist estimation procedures and Bayesian estimation procedures in order to analyse the observed data.
 
 ### Methods
 
-Upon the first approach to the MLE problem, the dependent variable time described by $T_i$, has been taken to follow a Weibull distribution as we cannot assume that the data does not complies with the assumptions of normality. The distribution is as below.
+Upon the first approach to the MLE problem, the dependent variable \texttt{time} described by $T_i$, has been assumed to follow a Weibull distribution. This seems an appropriate model for the problem due to its ability to describe an 'aging' process within the observed population. That is to say that the occurence of an event, in this case carcinogenesis or death, becomes more likely over time.
+
+The distribution is as below.
 $$ T_i \sim \mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale}=\exp(\eta_i)), \ \ \ \ \ \ \ \ \eta_i=\beta_0 + \beta_1 x_i $$
 where
 $$x_i=\left\{
@@ -34,16 +44,20 @@ $$x_i=\left\{
 0 & \mbox{rat $i$ received control}\\
 \end{array}
 \right.$$ 
-It can be seen from the above that the shape parameter in the model takes the form of $\frac{1}{\sigma}$ whilst the scale parameter is proportional to $\exp(\beta_0 + \beta_1 x_i)$. Censored observations, where the Treatment Indicator, $rx=0$, implied that the rat received only the control, are described by the survival function of a Weibull distribution given as follows.
+It can be seen from the above that the shape parameter in the model takes the form of $\frac{1}{\sigma}$ whilst the scale parameter is proportional to $\exp(\beta_0 + \beta_1 x_i)$. Censored observations, where $\texttt{status}=0$, implies that the rat died before tumour appearance, and are described by the survival function of the Weibull distribution given as follows.
 $$ S(t|\mbox{a,b})= \exp\bigg(-\bigg( \frac{t}{b}\bigg)^a\bigg), \ \ \ \ \ \ \ \ t> 0 $$ 
 The maximum likelihood estimate calculates an estimation of the population parameters such that the likelihood of obtaining the observed data is maximised. The vector of parameters to be estimated is $\boldsymbol{\theta}^T=( \beta_0, \beta_1, \log(\sigma))$.
 
 Given all observations $t_i$ are independent of one another, which we can assume to be true, the likelihood of the whole sample $T$ is the product of the individual likelihoods over all observations $t_i$, where $L$ is the likelihood. L can be defined as follows.
 
-$$ L=L_1 \times L_2 \times ... \times L_N = \prod^N_{i=1}{L_i} = P(y_1| \boldsymbol{\hat{\theta}}) \times P(y_2| \boldsymbol{\hat{\theta}}) \times ... \times P(y_N| \boldsymbol{\hat{\theta}}) = \prod^N_{i=1} P(y_i|\boldsymbol{\hat{\theta}} ) $$
-It is true that the likelihood will always be positive and since the $\log$ function is a non decreasing function, if we transform the likelihood by taking the $\log$ of it, the maxima will remain in the same position. When working with $\log$ it is more versatile as the sum of the log of the likelihood can be taken.
+$$ L=L_1 \times L_2 \times ... \times L_N = \prod^N_{i=1}{L_i} $$
 
-A function to describe the likelihood of the parameters $\boldsymbol{\theta}$ is defined in $R$ as below.
+Define the maximum likelihood in which the parameters are optimised as follows.
+
+$$ P(y_1|\boldsymbol{\hat{\theta}}) \times P(y_2|\boldsymbol{\hat{\theta}}) \times ... \times P(y_N|\boldsymbol{\hat{\theta}}) = \prod^N_{i=1} P(y_i|\boldsymbol{\hat{\theta}}) > \prod^N_{i=1} P(y_i|\boldsymbol{\theta}) \ \ \ \forall \ \boldsymbol{\theta} \neq \boldsymbol{\hat{\theta}}$$
+It is true that the likelihood will always be non-negative and since the natural $\log$ is a non-decreasing function, if we transform the likelihood by taking its natural $\log$, the maxima will remain in the same position. When working with $\log$ it is computationally easier since for large sample sizes even the maximum likelihood can be below machine precision.
+
+A function to compute the negative log likelihood of the observed times given the parameters $\boldsymbol{\theta}$ is defined in $R$ as below.
 
 ```{R }
 rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
@@ -62,69 +76,38 @@ nll.weibull <- function (theta) {
 }
 ```
 
+Initially, the function describing the negative log likelihood that will be maximised has been defined as \texttt{nll.weibull}. This function utilises the \texttt{status} variable to determine the contribution to the likelihood from each observation so that the optimal $\boldsymbol{\theta}$ can be calculated considering the censored and uncensored observations.
 
-Initially, the function describing the negative log likelihood that will be maximised has been defined as \texttt{nll.weibull}. This function includes subsetted data, so that the optimal $\boldsymbol{\theta}$ can be calculated considering the censored and uncensored observations.
+In order to compute the log likelihood for the censored observations, the shape and scale parameters of the survival function have been defined below.
 
-In order to compute the log likelihood for the censored observations, the shape and scale parameters of the survival function have been defined below. Given that the third element in $\boldsymbol{\theta}$ is $\log(\sigma)$, the exponent of $\sigma$ has been taken.
-$$ \mbox{Shape}=\frac{1}{\exp(\sigma)}, \ \ \ \ \ \mbox{Scale} = \exp(\beta_0 + \beta_1rx_0) $$
-The scale is altered by $rx_0$, since we are considering the treatment indicator based on only censored observations. The shape can be referred to as $k$ whilst the scale can be referred to as $\lambda$. 
+$$ \mbox{Shape}=\frac{1}{\sigma}, \ \ \ \ \ \mbox{Scale} = \exp(\beta_0 + \beta_1x_i) $$
+The scale is altered by \texttt{rx}, since we are aiming to estimate the contribution that the treatment made to the observed times. We hereon refer to the shape as $k$ and the scale as $\lambda$. 
 
-Since the method of finding the MLE has utilised the $\texttt{optim}$ function in $R$, the negative log likelihoods are computed, as $\texttt{optim}$ optimises the given function and seeks the minimum value. The likelihood for censored observations has been defined below.
+Since the method of finding the MLE has utilised the $\texttt{optim}$ function in $R$, the negative log likelihoods are computed, as $\texttt{optim}$ finds the minimum of a given function by default. The likelihood for censored observations has been defined below.
 
-$$ (L) _{rx=0}= - \sum -\log\bigg(\exp\bigg(-\bigg(\frac{t_0}{\lambda}\bigg)^k\bigg) \\
-=\sum \bigg(\frac{t_0}{\lambda}\bigg)^k, \ \ \ \ \ \ \ \ t_0 > 0 $$ 
+$$ (L) _{\texttt{status}=0}= - \sum -\log\bigg(\exp\bigg(-\bigg(\frac{t}{\lambda}\bigg)^k\bigg) \\
+=\sum \bigg(\frac{t}{\lambda}\bigg)^k, \ \ \ \ \ \ \ \ t > 0 $$ 
 
 In order to compute the likelihood of the observations in which the appearance of a tumor occured, the shape and scale parameters define below were passed to the built in $R$ function \texttt{dweibull}.
 
-$$ \mbox{shape}= \frac{1}{\exp(\sigma)}, \ \ \ \ \ \ \ \ \mbox{scale}=\exp(\beta_0 + \beta_{1} rx_{1}) $$ 
+$$ \mbox{shape}= \frac{1}{\sigma}, \ \ \ \ \ \ \ \ \mbox{scale}=\exp(\beta_0 + \beta_{1} x_{i}) $$ 
 
-The following code demonstrates how a plot was created for $\beta_0$ in order to pick an appropriate initial point to use when optimising \texttt{weibull}.
+The following plots demonstrate how we chose an appropriate initial point to use when optimising \texttt{nll.weibull}. Each parameter within $\boldsymbol{\theta}$ was varied and plotted against the resulting negative log likelihood. The observed minima were chosen as the initial $\theta$.
 
-```{R }
-#to pick initial theta, vary paramaters of theta individually and fix the others to find an approximate minimum
-#initialize variables
-theta <- c(0,0,0)
-beta0 <- theta[1]
-beta1 <- theta[2]
-logsig <- theta[3]
-beta0var <- 0
-beta1var <- 0
-logsigvar <- 0
-
-for (i in 0:1000) {
-  theta[1] <- 4.5 + i*0.0025
-  beta0[i+1] <- theta[1]
-  beta0var[i+1] <- nll.weibull(theta)
-}
-
-plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~5.75
-
-theta <- c(0,0,0)
-for (i in 0:1000) {
-  theta[2] <- 4 + i*0.0025
-  beta1[i+1] <- theta[2]
-  beta1var[i+1] <- nll.weibull(theta)
-}
-
-```
-
-These plots were created for each of the parameters of $\boldsymbol{\theta}$. The initial point has been obtained by plotting graphs of each of the parameters versus its variance. The plots have been observed to estimate the value where the variance appears to be lowest. The graphs are displayed below.
-```{r,echo=FALSE,message=FALSE, fig.height=2.5}
+```{r,echo=FALSE,message=FALSE, fig.height=2}
 rats<- read.table("http://people.bath.ac.uk/kai21/ASI/rats_data.txt")
+
+#define negative log likelihood function to minimise
 nll.weibull <- function (theta) {
-  #create subset of data since for the purposes of calculating the optimal theta since 
-  #when status = 0, the survival function does not depend on theta. Need to optimise this 
-  #function using optim.
-  t1 <- rats[which(rats$status==1),,]$time
-  rx1 <- rats[which(rats$status==1),,]$rx
-  t0 <- rats[which(rats$status==0),,]$time
-  rx0 <- rats[which(rats$status==0),,]$rx
-  #compute the negative log likelihood
-  k <- 1/exp(theta[3]) #shape 
-  lambda <- exp(theta[1] + theta[2]*rx0) #scale with censoring
-  loglik1 <- -sum(dweibull(t1, shape=1/exp(theta[3]), scale=exp(theta[1] + theta[2]*rx1), log=TRUE))
-  loglik2 <- sum((t0/lambda)^k)
-  loglik <- loglik1 + loglik2
+  #initialise variables from dataset
+  s <- rats$status
+  rx <- rats$rx
+  t <- rats$time
+  #define shape and scale of Weibull distribution
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1] + theta[2]*rx) #scale
+  #compute negative log likelihood
+  loglik <- -sum(log(((k/lambda)*(t/lambda)^(k-1)*exp(-(t/lambda)^k))^s*(exp(-(t/lambda)^k))^(1-s)))
   loglik
 }
 theta <- c(0,0,0)
@@ -135,62 +118,49 @@ beta0var <- 0
 beta1var <- 0
 logsigvar <- 0
 
-par(mfrow=c(1,3))
 for (i in 0:1000) {
   theta[1] <- 4.5 + i*0.0025
   beta0[i+1] <- theta[1]
   beta0var[i+1] <- nll.weibull(theta)
 }
 
-plot(beta0, beta0var, type="l", xlab=expression(beta[0]), ylab="Variance") 
+par(mfrow=c(1,3),mar=c(4,4,1,1))
+plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~5.75
 
-theta <- c(0,0,0)
+theta <- c(5.75,0,0)
 for (i in 0:1000) {
-  theta[2] <- 4 + i*0.0025
+  theta[2] <- -1.5 + i*0.0025
   beta1[i+1] <- theta[2]
   beta1var[i+1] <- nll.weibull(theta)
 }
 
-plot(beta1, beta1var, type="l", xlab=expression(beta[1]), ylab="Variance") #estimate optimal beta1 to be ~5.25
+plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~ -0.4
 
-
-theta <- c(0,0,0)
+theta <- c(5.75,-0.4,0)
 for (i in 0:1000) {
-  theta[3] <- 1.5 + i*0.005
+  theta[3] <- -2.5 + i*0.005
   logsig[i+1] <- theta[3]
   logsigvar[i+1] <- nll.weibull(theta)
 }
 
-plot(logsig, logsigvar, type="l", xlab=expression(log(sigma)), ylab="Variance") #estimate optimal logsigma to be ~2.75
-
+plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~ -0.5
 
 ```
 
-The minimum variance for each of the parameters appears to be at approximately $\boldsymbol{\theta}= (5.75,5.25,2.75)$ and hence this will be taken as the initial point to proceed with the optimization.
-
-\texttt{nll.weibull} wil be optimised in order to obtain the MLE of the parameters $\boldsymbol{\theta}$, using \texttt{optim}. The \texttt{optim} function works in such a way that seeks to optimize the given parameters using the given funtion which it will minimize by default. Since the \texttt{nll.weibull} function has been negated, \texttt{optim} will return the maximum likelihood estimate. \texttt{optim} has been instructed to use the Nelder-Mead optimization method as seen below.
+The minimum for each of the parameters appears to be at approximately $\boldsymbol{\theta}= (5.75,-0.4,-0.5)$ and hence this will be taken as the initial point to proceed with the optimization.
 
 ```{R}
-theta <- c(5.75,5.25,2.75)
+theta <- c(5.75,-0.4,-0.5)
 weibull.optim <- optim(theta, nll.weibull, method="BFGS", hessian=TRUE)
 ```
 
-The function \texttt{nll.weibull} has been minimised using \texttt{optim}, hence the log likelihood has been maximised with respect to the initial values of theta $\boldsymbol{\theta}$ using the Nelder-Mead method in \texttt{optim}. The first argument in \texttt{optim} provides the initial parameter values $\boldsymbol{\theta}$ from which to start the optimisation. The next argument is the objective function, \texttt{nll.weibulll}. The first argument of the function \texttt{nll.weibulll} is required to be the vector of parameters which need to be optimised. \texttt{optim} has been instructed to return an approximate Hessian matrix at the convergence.
+The function \texttt{nll.weibull} has been minimised using \texttt{optim}, hence the log likelihood has been maximised with respect to the initial values of theta $\boldsymbol{\theta}$ using the BFGS method. The first argument in \texttt{optim} provides the initial parameter values $\boldsymbol{\theta}$ from which to start the optimisation. The next argument is the objective function, \texttt{nll.weibulll}. The first argument of the function \texttt{nll.weibulll} is required to be the vector of parameters which need to be optimised. \texttt{optim} has been instructed to return an approximate Hessian matrix at the convergence.
 
 The returned objects are presented below.   
 \texttt{par}
-```{r}
-theta <- c(5.75,5.25,2.75)
-weibull.optim <- optim(theta, nll.weibull, method="BFGS", hessian=TRUE)
+```{r,echo=FALSE,message=FALSE}
 theta.weibull <- weibull.optim$par
-hess <- solve(weibull.optim$hessian)
-
-#then to find the standard error, take the square root of the diagonal of the inverse hessian
-se <- sqrt(diag(hess))
-
-#95% CI = parameter estimate +- ~1.96*stderr
-CI.norand <- c(theta.weibull[2]+qnorm(0.025)*se[2], theta.weibull[2]+qnorm(0.975)*se[2])
-par
+theta.weibull
 ```
 \texttt{value}
 ```{r,echo=FALSE,message=FALSE}
@@ -207,44 +177,43 @@ weibull.optim$counts
 weibull.optim$convergence
 ```
 
-\texttt{par} contains the parameter values, the maximum likelihood estimates $\boldsymbol{\hat{\theta}}$. \texttt{value} contains the value of the objective function at the maximum and \texttt{counts} indicates how many function evaluations were required in order to terminate the optimization. \texttt{convergence} when equal to $0$ indicates that the \texttt{optim} method utilising BFGS converged at a minimum value for the negative log likelihood. 
+\texttt{par} contains the parameter values, the maximum likelihood estimates $\boldsymbol{\hat{\theta}}$. \texttt{value} contains the value of the objective function at the minimum and \texttt{counts} indicates how many function evaluations were required in order to terminate the optimization. \texttt{convergence} when equal to $0$ indicates that the \texttt{optim} method utilising BFGS converged at a minimum value for the negative log likelihood. 
 
 The asymptotic standard error of the parameter estimates is calculated using the Hessian. The inverse of the approximated hessian is the asymptotic variance of the MLE and so the standard errors can be calculated by taking the square root of the diagonal elements of the asymptotic variance. This has been executed in $R$ and shown below.
 
 ```{R}
-#then to find the standard error, take the sqrt of the diag of the inverse hessian
 hess <- solve(weibull.optim$hessian)
-stderr <- sqrt(diag(hess))
+se <- sqrt(diag(hess))
 ```
 
-The $95%$ confidence interval for the paramater $\beta_1$ have been calculated with the code below.
+The $95\%$ confidence interval for the paramater $\beta_1$ has been calculated with the code below.
 
 ```{R}
 CI.norand <- c(theta.weibull[2]+qnorm(0.025)*se[2], theta.weibull[2]+qnorm(0.975)*se[2])
 ```
 
-The $95%$ asymptotic confidence interval for $\beta_1$ is displayed below along with the standard error estimates.
+The $95\%$ asymptotic confidence interval for $\beta_1$ is displayed below along with the standard error estimates.
 
 ```{r,echo=FALSE,message=FALSE}
 hess <- solve(weibull.optim$hessian)
-stderr <- sqrt(diag(hess))
+se <- sqrt(diag(hess))
 CI.norand <- c(theta.weibull[2]+qnorm(0.025)*se[2], theta.weibull[2]+qnorm(0.975)*se[2])
 CI.norand
-stderr
+se
 ```
 
 The correlation matrix has been created using the following code.
 
 ```{R}
-#estimated correlation matrix of theta hat
-corrmat <- diag(1/stderr)%*%hess%*%(diag(1/stderr))
+#estimated correlation matrix of optimal theta
+corrmat <- diag(1/se)%*%hess%*%(diag(1/se))
 ```
 \texttt{corrmat} 
 ```{r,echo=FALSE,message=FALSE}
-corrmat <- diag(1/stderr)%*%hess%*%(diag(1/stderr))
+corrmat <- diag(1/se)%*%hess%*%(diag(1/se))
 corrmat 
 ```
-Looking at the correlation matrix we can see that $\beta_1$ has quite a strong negative correlation of approximately $-0.732$ with $\beta_0$ and $\beta_1$ and $\log(\sigma)$ are moderately correlated with one another with a value of $-0.348$. The optimal parameter estimate for $\beta_1$ has been approximated at approximately $-0.2384417$ and the $95%$ asymptotic confidence interval for this value is ranging over the values $(-0.41311130, -0.0639883)$. This interval seems relatively wide considering the context of the study. For example, the absolute value of this range can be approximated at $0.34960247$ which is greater than the magnitude of the parameter estimate itself. Since $\beta_1$ directly effects the \texttt{status} this suggests that any estimate for $\beta_1$ falling within this range has a 95% certainty that it fits the true population.
+Looking at the correlation matrix we can see that $\beta_1$ has quite a strong negative correlation of approximately $-0.7325$ with $\beta_0$ and $\beta_1$, and $\log(\sigma)$ are moderately correlated with one another with a value of $-0.348$. The optimal parameter estimate for $\beta_1$ has been approximated at approximately $-0.2384$ and the $95\%$ asymptotic confidence interval for this value is ranging over the values $(-0.4131, -0.0640)$. This interval seems relatively wide considering the context of the study. For example, the absolute value of this range can be approximated at $0.3496$ which is greater than the magnitude of the parameter estimate itself. Any estimate for $\beta_1$ falling within this range has a $95\%$ certainty that it fits the true population.
 
 The data will now be analysed on the the probability model for $T_i$ takes on a log-logistic distribution as seen below with the same shape and scale parameters as in the Weibull model.
 
@@ -255,10 +224,10 @@ Whilst the survival function of a log-logistic distribution can be expressed as.
 $$ S(t|\mbox{a,b}) = \exp\bigg(- \log\bigg( 1 + \bigg(\frac{t}{b}\bigg)^a\bigg)\bigg), \  \ \ \ \ \ \ t > 0$$
 Hence, the negative log likelihood of the censored observations can be written as below.
 
-$$ (L) _{rx=0}= - \sum \log \bigg( \exp\bigg(-\log \bigg(1 +\bigg(\frac{t_0}{\lambda}\bigg)^k\bigg) \\
-=\sum \log \bigg( 1+ \bigg(\frac{t_0}{\lambda}\bigg)^k\bigg), \ \ \ \ \ \ \ \ t_0 > 0 $$ 
+$$ -\log(L_{\texttt{status}=0})= - \sum \log \bigg( \exp\bigg(-\log \bigg(1 +\bigg(\frac{t}{\lambda}\bigg)^k\bigg) \\
+=\sum \log \bigg( 1+ \bigg(\frac{t}{\lambda}\bigg)^k\bigg), \ \ \ \ t > 0 $$ 
 
-In equal fashion to the Weibull distribution, the collective likelihood of both censored and uncensored observations will be written as the sum of $L_{rx=0}$ and $L_{rx=1}$ as they are in terms of logs. The function that will be minimised has been defined in the $R$ code below.
+In equal fashion to the Weibull distribution, the collective likelihood of both censored and uncensored observations will be written as the sum of $-\log(L_{\texttt{ststus}=0})$ and $-log(L_{\texttt{status}=1})$. The function that will be minimised has been defined in the $R$ code below.
 
 ```{R}
 #define negative log likelihood function to minimise
@@ -276,32 +245,7 @@ nll.llogistic <- function (theta) {
 }
 ```
 
-The function, \texttt{nll.logistic} that has been defined above will be passed to \texttt{optim} using the initial vector of parameters. Again, the starting point has been estimated in the same fashion as the previous and the code below demonstrates this method for the parameter $\beta_0$.
-
-```{R}
-#to pick initial point, vary paramaters of theta individually  
-#and fix the others to find a rough minimum
-
-#initialize variables
-theta <- c(0,0,0)
-beta0 <- theta[1]
-beta1 <- theta[2]
-logsig <- theta[3]
-beta0var <- 0
-beta1var <- 0
-logsigvar <- 0
-
-for (i in 0:1000) {
-  theta[1] <- 2.5 + i*0.005
-  beta0[i+1] <- theta[1]
-  beta0var[i+1] <- nll.llogistic(theta)
-}
-plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~ 5.75
-
-
-```
-
-The plots for each parameter can be seen below.
+The function, \texttt{nll.logistic} that has been defined above will be passed to \texttt{optim} using an initial vector of parameters estimated in the same fashion as previously within the report in which we examine the change in likelihood caused by varying each parameter.
 
 ```{r,echo=FALSE,message=FALSE, fig.height=2.5}
 nll.llogistic <- function (theta) {
@@ -316,111 +260,56 @@ nll.llogistic <- function (theta) {
   loglik <- -sum(log(((k/lambda)*(t/lambda)^(k-1)/(1+(t/lambda)^k)^2)^s*(1/(1+(t/lambda)^k))^(1-s)))
   loglik
 }
-theta <- c(0,0,0)
-beta0 <- theta[1]
-beta1 <- theta[2]
-logsig <- theta[3]
-beta0var <- 0
-beta1var <- 0
-logsigvar <- 0
-
-for (i in 0:1000) {
-  theta[1] <- 2.5 + i*0.005
-  beta0[i+1] <- theta[1]
-  beta0var[i+1] <- nll.llogistic(theta)
-}
-#plot(beta0, beta0var, type="l") #estimate optimal beta0 to be ~ 5.75
-
-theta <- c(5.75,0,0)
-for (i in 0:1000) {
-  theta[2] <- -2.5 + i*0.005
-  beta1[i+1] <- theta[2]
-  beta1var[i+1] <- nll.llogistic(theta)
-}
-#plot(beta1, beta1var, type="l") #estimate optimal beta1 to be ~ -0.5
-
-theta <- c(5.75,-0.5,0)
-for (i in 0:1000) {
-  theta[3] <- -2.5 + i*0.005
-  logsig[i+1] <- theta[3]
-  logsigvar[i+1] <- nll.llogistic(theta)
-}
-#plot(logsig, logsigvar, type="l") #estimate optimal logsigma to be ~ -0.5
-par(mfrow=c(1,3))
-plot(beta0, beta0var, type="l", xlab=expression(beta[0]), ylab="Variance") #estimate optimal beta0 to be ~5.75
-plot(beta1, beta1var, type="l", xlab=expression(beta[1]), ylab="Variance") #estimate optimal beta1 to be ~-0.5
-plot(logsig, logsigvar, type="l", xlab=expression(log(sigma)), ylab="Variance") #estimate optimal logsigma to be ~-0.5
 ```
-The observed minima on the graphs will again be used as to estimate the starting parameters. This appears to be approximately at $\boldsymbol{\theta} = ( 5.75, -0.5, -0.5)$. Subsequent to this, the function will be optimized with respect to the chosen initial point $\boldsymbol{\theta}$. The $R$ code constructed in order to achieve this is below.  
+
+The function will be optimized with respect to the chosen initial point $\boldsymbol{\theta}$. The $R$ code constructed in order to achieve this is below.
 
 ```{R}
-theta <- c(5.75,-0.5,-0.5)
+theta <- c(5.75,-0.5,-0.5) #estimated starting theta
 nll.optim <- optim(theta, nll.llogistic, hessian=TRUE, method="BFGS")
-
 ```
-The objects returned by \texttt{nll.optim} can be seen below.   
+The objects returned by \texttt{nll.optim} are:   
 \texttt{par}
 ```{r,echo=FALSE,message=FALSE}
-nll.llogistic <- function (theta) {
-  #create subsets of data since for the likelihood function 
-  #since the contribution to the likelihood varies
-  #depending on the 'status' variable
-  t0 <- rats[which(rats$status==0),,]$time
-  rx0 <- rats[which(rats$status==0),,]$rx
-  t1 <- rats[which(rats$status==1),,]$time
-  rx1 <- rats[which(rats$status==1),,]$rx
-    #compute the negative log likelihood
-  k <- 1/exp(theta[3]) #shape
-  lambda <- exp(theta[1] + theta[2]*rx1) #scale for uncensored obs
-  loglik1 <- -sum(log((k/lambda)*(t1/lambda)^(k-1)/(1+(t1/lambda)^k)^2)) 
-  #log likelihood of uncensored obs
-  lambda <- exp(theta[1] + theta[2]*rx0) 
-  #redefine b for new rx vector for censored obs
-  loglik2 <- sum(log(1+(t0/lambda)^k)) 
-  #log likelihood of censored obs using S(t|a,b)
-  loglik <- loglik1 + loglik2 #joint likelihood
-  loglik
-}
 theta <- c(5.75,-0.5,-0.5)
 nll.optim <- optim(theta, nll.llogistic, hessian=TRUE, method="BFGS")
 theta.llog <- nll.optim$par 
-theta.llog 
+theta.llog
 ```
 \texttt{value}
 ```{r,echo=FALSE,message=FALSE}
-theta.llog <- nll.optim$value 
-theta.llog 
+value.opt <- nll.optim$value 
+value.opt
 ```
 \texttt{counts}
 ```{r,echo=FALSE,message=FALSE}
-theta.llog <- nll.optim$counts 
-theta.llog 
+counts.opt <- nll.optim$counts 
+counts.opt 
 ```
 \texttt{convergence}
 ```{r,echo=FALSE,message=FALSE}
-theta.llog <- nll.optim$convergence 
-theta.llog 
+converge.opt <- nll.optim$convergence 
+converge.opt
 ```
-It can be seen that from the \texttt{counts} output, that $35$ function evaluations and $12$ gradient evalutions were required in order to converge to the optimal solution in this case. \texttt{convergence} equal to $0$ confirms that the solution converged at the optimal.
+It can be seen that from the \texttt{counts} output, that $35$ function evaluations and $12$ gradient evalutions were required in order to converge to the optimal solution in this case.
 
-It is now left to estimate the asymptotoic standard errors of each parameter estimate. This along with a $95%$ confidence interval is estimated using the $R$ code below.
+It is now left to estimate the asymptotoic standard errors of each parameter estimate. This along with a $95\%$ confidence interval is estimated using the $R$ code below.
 
 ```{R}
-#name the nll.optim hessian
-hess <- nll.optim$hessian
+hess <- nll.optim$hessian #name the nll.optim hessian
 #to find the standard error, take the sqrt of the diag of the inverse hessian
 se <- sqrt(diag(solve(hess)))
 #95% CI = parameter estimate +- ~1.96*stderr
 CI <- c(theta.llog[2] + qnorm(0.025)*se[2], theta.llog[2] + qnorm(0.975)*se[2])
 ```
-The asymptotic standard error of each of the parameter estimates $\boldsymbol{\hat{\theta}}$, along with the $95%$ asymptotic confidence interval for the treatment effect $\beta_1$. 
+The asymptotic standard error of each of the parameter estimates $\boldsymbol{\hat{\theta}}$, along with the $95\%$ asymptotic confidence interval for the treatment effect $\beta_1$. 
 ```{r,echo=FALSE,message=FALSE}
 se <- sqrt(diag(solve(hess)))
 se
 CI
 ```
 
-It can be seen that the asymptotic standard error of $\beta_1$ has been approximated at a value of $17.36748$. Whilst the $95%$ confidence interval for $\beta_1$ is computed as $(-0.41689587, -0.04212134)$. Comparatively to the MLE of the Weibull distribution, this confidence interval has increased slightly in magnitude. Hence there is a greater range of values that could be taken to be the parameter estimate, such that the true mean of the population is with $95%$ certainty.
+It can be seen that the asymptotic standard error of $\beta_1$ has been approximated at a value of $0.0956$. Whilst the $95\%$ confidence interval for $\beta_1$ is computed as $(-0.4169, -0.0421)$. Comparatively to the MLE of the Weibull distribution, this confidence interval has increased slightly in magnitude. Hence there is a greater range of values that could be taken to be the parameter estimate, such that the true mean of the population is with $95\%$ certainty.
 
 Proceeding onward, the Weibull distribution was again considered, but with added random effect describing the litter, $\boldsymbol{b}$. So it can be seen that the scale of the Weibull distribution is then altered to the exponent of $\eta_i$. Where $\eta_i$ is now as follows:
 $$ \eta_i = \beta_0 + \beta_1 x_i + b_{litter(i)} $$
@@ -429,7 +318,7 @@ In order to obtain the likelihood of such a distribution given the data and the 
 
 So that the Laplace approximation can be utilised to obtain the likelihood, a function \texttt{lfyb} has been created. This evaluates the negative joint log density of the observations $\boldsymbol{y}$ and the added random effect, _litter_ $\boldsymbol{b}$ given the initial vector of parameters $\boldsymbol{\theta}$. It then follows that in order to use the Laplace approximation for the likelihood, the minimum of the negative log joint density of the random effect $\boldsymbol{b}$ and the data $\boldsymbol{y}$ as well as the relevant Hessian must be obtained.
 
-Hence, it is necessary to create the function \texttt{lfyb} such that the arguments of the function will be $\boldsymbol{\theta}$, $\boldsymbol{y}$, $\boldsymbol{b}$, $X$ and $Z$. The following $R$ code is a means of constructing these arguments.
+Hence, it is necessary to create the function \texttt{lfyb} such that the arguments of the function will be $\boldsymbol{\theta}$, $\boldsymbol{y}$, $\boldsymbol{b}$, $X$ and $Z$. The matrices X and Z allow for the relevant variables to be selected for any given observation. The following $R$ code is a means of constructing these arguments.
 
 ```{R}
 #theta = [beta0, beta1, log(sigma), log(sigmab)]
@@ -438,10 +327,11 @@ rats$litter <- factor(rats$litter)
 Z <- model.matrix(~ litter - 1, rats) #define Z matrix
 b <- rnorm(50,0,0.1) #set arbitrary b
 y <- rats$time #define y vector
-theta <- c(4.9831505, -0.2384417, -1.3324342, 0) #using optimal paramater estimates as initial from Q1, & small log(sig.b)
+theta <- c(4.9831505, -0.2384417, -1.3324342, 0) #using optimal paramater estimates as initial
+#from Q1, & small log(sig.b)
 ```
 
-These arguments are then used to construct the function. \texttt{lfyb} as such:
+These arguments are then used to construct the function \texttt{lfyb} as such:
 
 ```{R}
 lfyb <- function (b, y, theta, X, Z) {
@@ -471,7 +361,7 @@ lfyb <- function (b, y, theta, X, Z) {
 
 ```
 
-Following this, the gradient has been computed numerically using the following $R$ code.
+Following this, the gradient has been computed symbolically using the following $R$ code in order to make optimisation more efficcient in fifty dimensions.
 
 ```{R}
 #compute the derivative for status = 1
@@ -621,16 +511,13 @@ lal <- function (theta, y, X, Z) {
  lal.opt <- optim(theta, lal, y=y, X=X, Z=Z, method="BFGS", hessian=TRUE)
 
 ```
-The returned objects are displayed below.
+The optimal vector of parameters, $\boldsymbol{\hat{\theta}}$ is
 
 ```{r,echo=FALSE,message=FALSE}
   lal.opt <- optim(theta, lal, y=y, X=X, Z=Z, method="BFGS", hessian=TRUE)
-  lal.opt
-
+  thetahat <- lal.opt$par
+  thetahat
 ```
-
-The optimal vector of parameters
-
 
 The Weibull distribution adopted previously to model the effects of the added random effects, will be analysed again but this time following a Bayesian estimation procedure. The proposal distributions $q( \boldsymbol{\theta}_j | \boldsymbol{\theta}_{j-1})$ which were used to initiate the Metropolis Hastings method was chosen to be the marginal negative log-likelihood. The starting parameter $\boldsymbol{\theta}_0$ was taken to be the previously computed optimal values $\hat{\boldsymbol{\theta}}$ in the early stages of the analysis along with a small parameter estimate for $\log({\sigma}_b)$.
 
@@ -649,3 +536,419 @@ y <- rats$time #define y vector
 theta <- c(4.9831505, -0.2384417, -1.3324342, 0) #using optimal paramater estimates from Q1, & small log(sig.b)
 ```
 
+The defined parameters are passed as arguments to the log posterior function below. $\log(\sigma_b)$ follows an exponential prior distribution with rate $5$ and the remaining parameters have uniform prior distributions. The function \texttt{lfyb} that was previously computed has been made positive and added to the prior for $\log(\sigma_b)$.
+
+```{r}
+log.posterior <- function (b, theta, times = y, X.mat=X, Z.mat=Z) {
+  #log likelihood
+  prior <- dexp(x=exp(theta[4]), rate=5, log=TRUE) #define log(sigb) to follow a exponentional prior distn with rate 5
+  prior[prior==-Inf] <- -10
+  l.lik <- -lfyb(b, times, theta, X.mat, Z.mat) + prior #add the absolute values of the log likelihood together
+  l.lik
+}
+```
+
+The metropolis Hastings algorithm is implemented with the code below. The proposal distributions used
+
+```{r}
+n.rep <- 100000
+sigma.prop <- c(0.15, 0.055, 0.055, 0.1) #tuning possible; (0.15, 0.055, 0.055, 0.1) 
+#looks to be very good in terms of acceptance rate
+MH <- function (theta, sigma.prop, n.rep) {
+  theta.vals <- matrix(0, n.rep, 4) #matrix to save generated values
+  theta.vals[1,] <- theta
+  b <- rep(0, 50)
+  b.vals <- matrix(0, n.rep, 50)
+  b.vals[1,] <- b
+  lp0 <- log.posterior(b, theta.vals[1,])
+  accept.th <- 0
+  accept.b <- 0
+  for (i in 2:n.rep) {
+    #update theta
+    theta <- theta+rnorm(4, 0, sigma.prop)
+    lp1 = log.posterior(b, theta)#evaluate log posterior
+    if (runif(1) < exp(lp1 - lp0)){#accept step with probability alpha
+      accept.th <- accept.th+1
+      lp0 <- lp1
+    }else{
+      theta <- theta.vals[i-1,]
+    }
+    #update random effects
+    b <- b + rnorm(50)*0.045 #after tuning, 0.045 produces an acceptance rate around 0.23
+    lp1 <- log.posterior(b, theta)
+    if (runif(1) < exp(lp1 - lp0)){
+      accept.b <- accept.b+1
+      lp0 <- lp1
+    }else{
+      b <- b.vals[i-1,]
+    }
+    theta.vals[i,] <- theta
+    b.vals[i,] <- b
+  }
+  accept.rate <- c(accept.th/n.rep, accept.b/n.rep)
+  list(theta=theta.vals, accept.rate=accept.rate)
+}
+```
+
+```{r}
+#initialize theta to an arbitrary value; run Metropolis Hastings
+theta0 <- c(1,0,0.1,0.2)
+mh <- MH(theta0, sigma.prop, n.rep)
+theta <- mh$theta
+accept.rate <- mh$accept.rate
+```
+Plots below.
+```{r, echo=FALSE, include=FALSE, fig.height=2.5}
+#we plot the autocorrelation of the variables, relation between elements of theta and the evolution of each element of theta
+par(mfrow=c(2,2),mar=c(4,4,1,1))
+acf(theta[,4], lag.max=2000) #looks like the 'stickiest' parameter is theta[4], acf = 0 after about 2000 iterations
+acf(theta[,3], lag.max=2000)
+acf(theta[,2], lag.max=2000)
+acf(theta[,1], lag.max=2000)
+lower <- n.rep/5 + 1
+theta <- theta[lower:n.rep,]
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+plot(theta[,1],theta[,2],xlab="B0",ylab="B1",pch=20,cex=1)
+plot(theta[,1],theta[,3],xlab="B0",ylab="log(sig)",pch=20,cex=1)
+plot(theta[,1],theta[,4],xlab="B0",ylab="log(sig.b)",pch=20,cex=1)
+plot(theta[,2],theta[,3],xlab="B1",ylab="log(sig)",pch=20,cex=1)
+plot(theta[,2],theta[,4],xlab="B1",ylab="log(sig.b)",pch=20,cex=1)
+plot(theta[,3],theta[,4],xlab="log(sig)",ylab="log(sig.b)",pch=20,cex=1)
+par(mfrow=c(2,2),mar=c(4,4,1,1))
+for (i in 1:4){
+  plot(theta[,i])
+}
+```
+Need to talk about the plots. 
+
+## Fatigue of materials
+
+### Absract
+
+A number of fatigue tests have been carried out on materials which are subject to cyclic loading. 
+
+This study has been set up as a means of predicting the fatigue, as to aid the use of fatigue materials within the practice of mechanical and structural engineering. 
+
+### Introduction
+
+The fatigue characteristics are established through $26$ fatigue tests which are performed on the small flat plates of the loading materials called coupons. The following elements of the study were recorded.
+
+*   $\texttt{Cycles}$ the number of cycles, $\N_i$ until failure in coupon $i$.    
+*   $\texttt{Stress levels}$ the controlled levels of stress, $s_i$ have been recorded as force per unit area (in Mega Pascals, MPa).    
+
+The stress levels $s_i$ are controlled throughout the series of tests, whilst the number of cycles to failure $N_i$ exhibits a random behaviour due to inherent microstructural inhomogeneity in the material properties as well as due to uncontrolled differences in test conditions. If a test is terminated before the coupon fails, then the coupon is market as a 'runout'. In terms of likelihoods, the runouts can be interpreted as censored observations.
+
+### Methods
+
+The number of cycles has been modelled using the following probability model.
+
+$$ N_i = \alpha (s_i - \gamma)^{\delta} \epsilon_i, \ \ \ \ \ \ \ \textrm{where} \ \ s_i > \gamma $$
+
+and $\epsilon_i$ is a random error such that,
+
+$$ \epsilon_i \sim \textrm{Weibull}(\textrm{shape}= 1/ \sigma, \ \textrm{scale}=1) $$
+The constants $\alpha > 0$, $\delta \in \mathbb{R}$, $\delta > 0 $ and $\sigma > 0 $ are unknown parameters. Empirical results suggest coupons tested below the stress level $\gamma$ will never fail. The unknown parameter $\gamma$ is therefore called the \textbf{fatigue limit}.
+
+Primarily, $\gamma$ was taken to be $50$ so that the runouts will be ommitted. The maximum likelihood estimate of $\boldsymbol{\theta}= (\log(\alpha), \delta, \log(\sigma))^T$, was found using \texttt{optim}. The $R$ code constructed to compute this is displayed.
+
+```{r}
+fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
+#need to show the Ni is a weibull dist with shape epsilon and scale alpha(s-gama)^delta,
+#then can compute likelihood as in Q1.
+#Question 2.1
+gama <- 50 #arbitrary gamma
+theta <- c(1,1,1) #arbitrary initial theta
+s <- fatigue$s #stress
+N <- fatigue$N
+nll.weibull <- function (theta, gama, s, N) {
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s - gama)^theta[2] #scale
+  ro <- fatigue$ro
+  #compute the negative log likelihood
+  nll0 <- -sum(dweibull(N, shape=k, scale=lambda, log=TRUE)^(1-ro))
+  nll1 <- sum(((N/lambda)^k)^ro)
+  nll <- nll0 + nll1
+  nll
+}
+maxlik <- optim(theta, nll.weibull, gama=gama, s=s, N=N, method="BFGS", hessian=TRUE)
+```
+
+The returned objects can be seen below.
+
+```{r, echo=FALSE, message=FALSE}
+theta.opt <- maxlik$par
+maxlik
+```
+
+The optimised vector of parameters $\boldsymbol{\hat{\theta}}= (13.5727280, -1.0460720, -0.5109903)$. The asymptotic $95\%$ confidence intervals of the parameters are displayed in columns $1$, $2$ and $3$ respectively below.
+
+```{r,echo=FALSE, message=FALSE}
+se <- sqrt(diag(solve(maxlik$hessian)))
+CI1 <- c(maxlik$par[1]+qnorm(0.025)*se[1], maxlik$par[1]+qnorm(0.975)*se[1])
+CI2 <- c(maxlik$par[2]+qnorm(0.025)*se[2], maxlik$par[2]+qnorm(0.975)*se[2])
+CI3 <- c(maxlik$par[3]+qnorm(0.025)*se[3], maxlik$par[3]+qnorm(0.975)*se[3])
+CI <- matrix(c(CI1,CI2,CI3), ncol=3, nrow=2)
+CI
+```
+
+$\gamma$ was then varied in order to identify the impact it has on the sensitivity of the results. The code that has been displayed below and following this, plots were made in orer to observe the trend.
+
+```{r}
+#How variations in gama affects the theta
+f.vals <- rep(0,80)
+f.par <- matrix(0,nrow=3, ncol=80)
+for (i in 1:80) {
+  gama <- i
+  f.vals[i] <- nll.weibull(theta, gama, s, N)
+  maxlik <- optim(theta, nll.weibull, gama=gama, s=s, N=N, hessian=TRUE)
+  f.par[,i] <- maxlik$par
+}
+```
+
+```{r, echo=FALSE, message=FALSE, fig.height=3} 
+par(mfrow=c(1,3))
+gama <- seq(from=1,to=80)
+plot(gama, f.par[1,], ylab="log(alpha)", xlab="gamma")
+plot(gama, f.par[2,], ylab="delta", xlab="gamma")
+plot(gama, f.par[3,], ylab="log(sigma)", xlab="gamma")
+```
+
+There seems to be a downward linear trend amongst $\log(\alpha)$ and $\gamma$. As the values for $\gamma$  increase from $0$ to $80$, $\log(\alpha)$ decreases from around $40$ for $\gamma=0$. There is an apparent upward linear trend amongst $\delta$ for increasing $\gamma$. It varies from around $-6$ to around $-1$. As $\gamma$ increases, $\delta$ appears to relatively steadily decline from around $-0.8$ to $-0.9$ and then randomly seems to increase exponentially. It appears that changes in $\gamma$ impact $\delta$ quite substantially. This parameter is sensitive to change in $\gamma$.
+
+$\gamma$ has been estimated amongst the vector of unknowns $\boldsymbol{\theta}_* = (\log(\alpha), \delta, \log(\sigma), \gamma)$. This has been executed using the $R$ code below.
+
+```{r}
+#We can estimate gama by including it within theta and passing it to optim
+#redefine nll.weibull with theta[4] = gama
+gama <- 50 #reset gama
+theta.opt <- c(theta.opt, gama)
+nll.weibull2 <- function (theta, s, N) {
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s - theta[4])^theta[2] #scale
+  ro <- fatigue$ro
+  #compute the negative log likelihood
+  nll0 <- -sum(dweibull(N, shape=k, scale=lambda, log=TRUE)^(1-ro))
+  nll1 <- sum(((N/lambda)^k)^ro)
+  nll <- nll0 + nll1
+  nll
+}
+maxlik2 <- optim(theta.opt, nll.weibull2, s=s, N=N, hessian=TRUE)
+theta.opt2 <- maxlik2$par
+gama.opt <- theta.opt2[4] #gama looks like it should be around 66
+```
+It has been done in such a way that $\gamma$ has been passed to the vector of parameters which are modelled using a Weibull distribution. The new vector of parameters $\boldsymbol{\theta}_*$ which ultimately will be passed to \texttt{optim} to compute the MLE. The estimates of the new vector of parameters is displayed below.
+
+```{r, echo=FALSE, message=FALSE}
+theta.opt2 <- maxlik2$par
+theta.opt2
+```
+Hence, with $\gamma$ as an added parameter it has been estimated to be around 66.
+
+We proceed to focus on the lower quantiles of the fatigue as a function of stress as this is an area of great interest within engineering. The lower $10\%$ quantile of $N$ is considered using the following probability model.
+
+$$N_{0.1} = \alpha (s_i - \gamma)^{\delta}z^\sigma_{0.1}   $$
+Where $z_{0.1}$ is the lower quantile of a Weibull distribution with unit shape and scale. This will be such that it is am exponential distribution with unit rate. The following $R$ code displays the construction of the $10\%$ quantile. 
+```{r}
+#function to compute quantile of N
+N.quantile <- function (theta, s, quantile) {
+  ZQ <- qweibull(quantile, shape=1, scale=1)
+  NQ <- exp(theta[1])*(s-theta[4])^theta[2]
+  Q <- NQ*ZQ^exp(theta[3])
+  Q
+}
+plot(s, log(N))
+S <- seq(from=min(s), to=max(s), by=0.1)
+N.lower.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.1)
+lines(s, log(N.lower.quantile), col="red")
+N.middle.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.5)
+lines(s, log(N.middle.quantile), col="green")
+```
+
+The plot below displays the log transformed data points along with interpolated $10\%$ and $\50%$ quantiles of $N$.
+
+```{r, echo=FALSE, message=FALSE, fig.height=3}
+par(mfrow=c(1,1))
+plot(s, log(N))
+S <- seq(from=min(s), to=max(s), by=0.1)
+N.lower.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.1)
+lines(s, log(N.lower.quantile), col="red")
+N.middle.quantile <- N.quantile(theta=theta.opt2, s=s, quantile=0.5)
+lines(s, log(N.middle.quantile), col="green")
+```
+
+It can be seen that the estimated MLE parameters calculated fits the observed data quite well, however there are some obvious outliers that fall below the $10\%$ quantile of the curve.
+
+Previously, we assumed the fatigue limit of all the coupons to be the same. We can modify our model to assume that the fatigue limit of the coupons are different by introducing random effects for each of the coupons. Let the set of random effects be $\Gamma$. We require that all $\gamma_i< s_i$. The probability density function of each $\Gamma_i$ is $\mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma_\gamma}, \mbox{scale}=\exp(\mu_\gamma))$. The conditional probability of the number of cycles to failure given the fatigue limit of a coupon is  $N_i|\Gamma_i=\gamma_i<s_i\sim\mbox{Weibull}(\mbox{shape} = \frac{1}{\sigma}, \mbox{scale} = \alpha(s_i-\gamma_i)^\delta)$ If we let $\boldsymbol{b}$ be the vector of random effects we can define the vector of unknown parameters as $\boldsymbol{\theta}^T=(log(\alpha), \delta, log(\sigma), \mu_\gamma, log(\sigma_\gamma))$. To implement a Metropolis Hastings algorithm, we assume uniform improper prior distributions for all the parameters except for $\sigma_\gamma$, which has an exponential prior distribution with rate 5. We also assume that the parameters are independent of each other. We can then make use of the same Metropolis-Hastings algorithm as in the previous study to simulate from the posterior of $\boldsymbol{\theta}$. The log posterior is as follows
+
+```{r}
+log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
+  #log density of N|gama
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s. - gama)^theta[2] #scale
+  ll0 <- sum(dweibull(N., shape=k, scale=lambda, log=TRUE)*(1-ro.))
+  ll1 <- sum((-(N./lambda)^k)*ro.)
+  ll <- ll0 + ll1
+  if (is.nan(ll) || ll == -Inf) {
+    ll <- -1e3
+  }
+  #log density of gama
+  ll.gama <- sum(dweibull(gama, shape = 1/exp(theta[5]), scale = exp(theta[4]), log=TRUE))
+  if (is.nan(ll.gama) || ll.gama == -Inf) {
+    ll.gama <- -1e3
+  }
+  #log density of prior of sig.gama
+  ll.prior <- dexp(exp(theta[5]), rate=5, log=TRUE)
+  if (ll.prior == -Inf) {
+    ll.prior <- -1e3
+  }
+  #sum of log densities
+  lp <- ll + ll.gama + ll.prior
+  lp
+}
+```
+
+We use the log posterior to decide whether a proposed step should be accepted or not inside the Metropolis-Hastings algorithm. We then implement the algorithm in an $R$ function as below.
+
+```{r}
+MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
+  theta.vals <- matrix(0, n.rep, 5) #matrix to save generated values
+  theta.vals[1,] <- theta
+  b <- runif(26, min=0.01, max=s.)
+  b.vals <- matrix(0, n.rep, 26)
+  b.vals[1,] <- b
+  lp0 <- log.post(theta.vals[1,], b)
+  accept.th <- 0
+  accept.b <- 0
+  
+  for (i in 2:n.rep) {
+    #update theta
+    theta <- theta + rnorm(5, 0, sigma.prop[1:5])
+    lp1 <- log.post(theta, b)
+    if (runif(1) < exp(lp1 - lp0)){
+      accept.th <- accept.th+1
+      lp0 <- lp1
+    }else{
+      theta <- theta.vals[i-1,]
+    }
+    #update random effects
+    b.step <- sigma.prop[6]
+    b <- b + runif(26, -s., s.)*b.step
+    #we restrict b to staying between 0 and the corresponding element in s
+    while (length(b[b<0 | b>s.]) > 0) {
+      b[b<0 | b>s.] <- b.vals[i-1,which(b<0 | b>s.)] + runif(length(b[b<0 | b>s.]), -s., s.)*b.step 
+    }
+    #we evaluate the log posterior at the new b and accept or reject the step
+    lp1 <- log.post(theta, b)
+    if (runif(1) < exp(lp1 - lp0)){
+      accept.b <- accept.b+1
+      lp0 <- lp1
+    }else{
+      b <- b.vals[i-1,]
+    }
+    theta.vals[i,] <- theta
+    b.vals[i,] <- b
+  }
+  accept.rate <- c(accept.th/n.rep, accept.b/n.rep)
+  list(theta=theta.vals, accept.rate=accept.rate, gama=b.vals)
+}
+```
+
+This returns every $\theta$ and random effect $\Gamma$ visited as well as the acceptance rate for steps in the algorithm. To call the function we load the data, fix an initial guess for $\theta$, the number of repetitions and the spread of the proposed steps. An example is below.
+
+```{r}
+fatigue<- read.table("http://people.bath.ac.uk/kai21/ASI/fatigue.txt")
+#set seed for reproducibility
+set.seed(7)
+s <- fatigue$s
+N <- fatigue$N
+ro <- fatigue$ro
+theta <- c(5, -2, 0, 4, -1.5)
+sigma.prop <- c(0.055, 0.05, 0.05, 0.05, 0.05, 0.1)#we achieve an optimal acceptance rate using these proposal standard deviations
+n.rep <- 100000
+mh <- MH(theta, sigma.prop, n.rep)
+```
+
+```{r}
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+yaxis <- c(expression(log(alpha)), expression(delta), expression(log(sigma)), expression(mu[gamma]), expression(log(sigma[gamma])))
+for (i in 1:5){
+  plot(mh$theta[lower:n.rep,i], type="l", ylab=yaxis[i], xlab="Iteration")
+}
+```
+
+Given the actual marginal density of each $n_i$, we can redefine our log posterior function to include the marginal of N. The marginal of $n_i$ is
+$$f(n_i)=\int_{0}^{s_i}f(n_i|\gamma_i)f(\gamma_i)d\gamma_i$$
+Then the marginal of N is the product of all $f(n_i)$ since the failure times are assumed to be independent. To implement this in $R$, we define the function to be integrated for each i as below
+
+```{r}
+f <- function (g, i, theta) {
+  fng <- dweibull(N[i], shape = 1/exp(theta[3]), scale = exp(theta[1])*(s[i]-g)^theta[2])
+  fg <- dweibull(g, shape = 1/exp(theta[5]), scale = exp(theta[4]))
+  f <- fng*fg
+  f
+}
+```
+
+Since we need the natural logarithm of the product of these integrals, we can define a loop to compute the integral for each i, and sum up the logarithms as in the code below
+
+```{r}
+I <- rep(0,26)
+for (i in 1:length(s)){
+  G <- integrate(f, lower=0, upper=s[i], i=i, theta=theta)
+  I[i] <- G$value
+}
+I <- sum(log(I))
+```
+This loop can be used in the log posterior function. The following is the same as in the previous part except for the addition of the term defined by the integral. Since the marginal is the denominator in the expression for the posterior distribution, the value stored in the variable I has to be subtracted in the function.
+```{r}
+log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
+  #log density of N|gama
+  k <- 1/exp(theta[3]) #shape
+  lambda <- exp(theta[1])*(s. - gama)^theta[2] #scale
+  ll0 <- sum(dweibull(N., shape=k, scale=lambda, log=TRUE)*(1-ro.))
+  ll1 <- sum((-(N./lambda)^k)*ro.)
+  ll <- ll0 + ll1
+  if (is.nan(ll) || ll == -Inf) {
+    ll <- -1e3
+  }
+  #log density of gama
+  ll.gama <- sum(dweibull(gama, shape = 1/exp(theta[5]), scale = exp(theta[4]), log=TRUE))
+  if (is.nan(ll.gama) || ll.gama == -Inf) {
+    ll.gama <- -1e3
+  }
+  #log density of prior of sig.gama
+  ll.prior <- dexp(exp(theta[5]), rate=5, log=TRUE)
+  if (ll.prior == -Inf) {
+    ll.prior <- -1e3
+  }
+  #marginal of N
+  I <- rep(0,26)
+  for (i in 1:length(s.)){
+    G <- integrate(f, lower=0, upper=s.[i], i=i, theta=theta)
+    I[i] <- G$value
+  }
+  I <- sum(log(I))
+  #sum of log densities
+  lp <- ll + ll.gama + ll.prior - I
+  lp
+}
+```
+Since the rest of the model is unchanged, we can use the rest of the implementation of the Metropolis Hastings algorithm as before.
+
+When we run both programs, we see that the value of the parameters is in the same range for both methods, as expected. However, when using the marginal density of each $n_i$, the random walk seems to be more sticky, meaning the autocorrelation of the parameters is quite high, which necessitates a larger sample size to obtain good results. This can become a problem especially since the $R$ function \texttt{integrate} takes a long time to run. In addition, the parameters in $\theta$ seem more correlated than they were without using the marginal likelihood in the posterior density. Plots of the random walk are below (again discarding the first 20% of the random walk)
+
+```{r}
+theta <- c(5, -2, 1, 4, -1.5)
+sigma.prop <- c(0.11, 0.11, 0.11, 0.11, 0.11, 0.11)
+n.rep <- 10000
+mh <- MH(theta, sigma.prop, n.rep)
+lower <- n.rep/5+1
+```
+
+```{r, message=FALSE, echo=FALSE}
+par(mfrow=c(3,2),mar=c(4,4,1,1))
+yaxis <- c(expression(log(alpha)), expression(delta), expression(log(sigma)), expression(mu[gamma]), expression(log(sigma[gamma])))
+for (i in 1:5){
+  plot(mh$theta[lower:n.rep,i], type="l", ylab=yaxis[i], xlab="Iteration")
+}
+```
