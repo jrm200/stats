@@ -8,16 +8,11 @@ N <- fatigue$N
 ro <- fatigue$ro
 gama <- runif(26, min=0.01, max=s) #define random effect, gama between 0 and the value of s which it relates to
 
-f <- function (gama, i, theta.Q10=theta) {
-  k <- 1/exp(theta.Q10[3]) #shape
-  lambda <- exp(theta.Q10[1])*(s[i] - gama)^theta.Q10[2] #scale
-  #compute the negative log likelihood
-  ll0 <- dweibull(N[i], shape=k, scale=lambda) #f(n|gama)
-  ll1 <- exp(-(N[i]/lambda)^k)
-  ll <- ll0^(1-ro[i])*ll1^ro[i]
-  ll.gama <- dweibull(gama, shape=1/exp(theta.Q10[5]), scale=exp(theta.Q10[4]))
-  int <- ll*ll.gama
-  int
+f <- function (g, i, theta) {
+  fng <- dweibull(N[i], shape = 1/exp(theta[3]), scale = exp(theta[1])*(s[i]-g)^theta[2])
+  fg <- dweibull(g, shape = 1/exp(theta[5]), scale = exp(theta[4]))
+  f <- fng+fg
+  f
 }
 
 log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
@@ -43,7 +38,7 @@ log.post <- function (theta, gama, s.=s, ro.=ro, N.=N) {
   #marginal of N
   I <- rep(0,26)
   for (i in 1:length(s.)){
-    G <- integrate(f, lower=0, upper=s.[i], i=i)
+    G <- integrate(f, lower=0, upper=s.[i], i=i, theta=theta)
     I[i] <- G$value
   }
   I <- sum(log(I))
@@ -66,6 +61,7 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
   for (i in 2:n.rep) {
     #update theta
     theta <- theta + rnorm(5, 0, sigma.prop[1:5])
+    #print(theta)
     lp1 <- log.post(theta, b)
     if (runif(1) < exp(lp1 - lp0)){
       accept.th <- accept.th+1
@@ -94,8 +90,8 @@ MH <- function (theta, sigma.prop, n.rep, s.=s, ro.=ro, N.=N) {
   list(theta=theta.vals, accept.rate=accept.rate, gama=b.vals)
 }
 
-theta <- c(5, -2, 0, 4, -1.5)
-sigma.prop <- c(0.05, 0.05, 0.05, 0.05, 0.05, 0.05)
+theta <- c(5, -2, 1, 4, -1.5)
+sigma.prop <- c(0.12, 0.12, 0.12, 0.12, 0.12, 0.12)
 n.rep <- 10000
 mh <- MH(theta, sigma.prop, n.rep)
 ar <- mh$accept.rate
@@ -106,6 +102,6 @@ par(mfrow=c(3,2),mar=c(4,4,1,1))
 for (i in 1:5){
   plot(mh$theta[lower:n.rep,i], type="l")
 }
-for (i in 1:7){
-  plot(mh$gama[lower:n.rep,3*i], type="l")
-}
+#for (i in 1:7){
+#  plot(mh$gama[lower:n.rep,3*i], type="l")
+#}
